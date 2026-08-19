@@ -8,15 +8,15 @@
 #include <stdio.h>
 
 #ifdef __unix__
-#include <fcntl.h>
-#include <sys/ioctl.h>
-#include <termios.h>
-#include <unistd.h>
+ #include <fcntl.h>
+ #include <sys/ioctl.h>
+ #include <termios.h>
+ #include <unistd.h>
 #elifdef _WIN32
-#include <conio.h>
-#include <Windows.h>
+ #include <conio.h>
+ #include <Windows.h>
 #else
-#warning platform does not provide terminal mode functions
+ #warning platform does not provide terminal mode functions
 #endif
 
 static inline void pl_term_clear() {
