@@ -10,22 +10,22 @@
 #endif
 
 // Evaluates to whether the arguments' types are compatible.
-#define pl_is_same(X, ...) _Generic((typeof(X)*)0,typeof(__VA_ARGS__)*:1,default:0)
+#define pl_is_same(x, ...) _Generic((typeof(x)*)0,typeof(__VA_ARGS__)*:1,default:0)
 
 // Evaluates to whether the arguments' types are compatible, ignoring qualifiers.
-#define pl_is_same_unqual(X, ...) _Generic((typeof_unqual(X)*)0,typeof_unqual(__VA_ARGS__)*:1,default:0)
+#define pl_is_same_unqual(x, ...) _Generic((typeof_unqual(x)*)0,typeof_unqual(__VA_ARGS__)*:1,default:0)
 
 // Accepts a condition expression and two other expressions.
 // The condition must be constant and integer-like.
 // If the condition is truthy, evaluates to the second expression.
 // Otherwise, evaluates to the third expression.
-#define pl_choose(COND, X, ...) _Generic(int[1+!(COND)],int[1]:(X),default:(__VA_ARGS__))
+#define pl_choose(cond, x, ...) _Generic(int[1+!(cond)],int[1]:(x),default:(__VA_ARGS__))
 
 // Accepts a condition expression and two other types or expressions.
 // The condition must be constant and integer-like.
 // If the condition is truthy, evaluates to the second argument's type.
 // Otherwise, evaluates to the third argument's type.
-#define pl_choose_type(COND, X, ...) typeof(pl_choose((COND),pl_fake(X),pl_fake(__VA_ARGS__)))
+#define pl_choose_type(cond, x, ...) typeof(pl_choose((cond),pl_fake(x),pl_fake(__VA_ARGS__)))
 
 // Evaluates to an lvalue expression of the argument's type.
 // Must not be used in evaluated contexts.
@@ -418,6 +418,6 @@
 #define pl_drop_const_volatile_atomic_restrict(...) typeof_unqual(__VA_ARGS__)
 
 // Evaluates to whether an identifier represents a type.
-#define pl_is_type(NAME) (!pl_is_same(int(int(NAME)),int(int)))
+#define pl_is_type(name) (!pl_is_same(int(int(name)),int(int)))
 
 #endif

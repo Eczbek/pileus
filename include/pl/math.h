@@ -41,8 +41,8 @@ static inline size_t (pl_int_width)(size_t size, unsigned char* max) {
 
 // Evaluates to 0, -1, or 1, if the first argument is equal to, less than, or greater than the second argument.
 // If not both of the arguments' types are integers, each is cast to their mutual common type.
-#define pl_compare(X, ...) \
-	pl_choose(pl_is_float((X) + (__VA_ARGS__)), detail_pl_compare_float((X), __VA_ARGS__), pl_choose(pl_is_decimal((X) + (__VA_ARGS__)), detail_pl_compare_decimal((X), __VA_ARGS__), pl_compare((typeof(X))-1 < 0, (typeof(__VA_ARGS__))-1 < 0, sizeof((X) + (__VA_ARGS__)), (unsigned char*)&(typeof((X) + (__VA_ARGS__))){ (typeof((X) + (__VA_ARGS__)))(X) }, (unsigned char*)&(typeof((X) + (__VA_ARGS__))){ (typeof((X) + (__VA_ARGS__)))(__VA_ARGS__) }, (unsigned char*)&(typeof((X) + (__VA_ARGS__))){ (typeof((X) + (__VA_ARGS__)))-1 })))
+#define pl_compare(lhs, ...) \
+	pl_choose(pl_is_float((lhs) + (__VA_ARGS__)), detail_pl_compare_float((lhs), __VA_ARGS__), pl_choose(pl_is_decimal((lhs) + (__VA_ARGS__)), detail_pl_compare_decimal((lhs), __VA_ARGS__), pl_compare((typeof(lhs))-1 < 0, (typeof(__VA_ARGS__))-1 < 0, sizeof((lhs) + (__VA_ARGS__)), (unsigned char*)&(typeof((lhs) + (__VA_ARGS__))){ (typeof((lhs) + (__VA_ARGS__)))(lhs) }, (unsigned char*)&(typeof((lhs) + (__VA_ARGS__))){ (typeof((lhs) + (__VA_ARGS__)))(__VA_ARGS__) }, (unsigned char*)&(typeof((lhs) + (__VA_ARGS__))){ (typeof((lhs) + (__VA_ARGS__)))-1 })))
 static inline int (pl_compare)(bool lhs_signed, bool rhs_signed, size_t size, unsigned char* lhs, unsigned char* rhs, unsigned char* max) {
 	for (size_t i = size; i--;) {
 		if (max[i]) {
@@ -84,29 +84,29 @@ static inline int detail_pl_compare_decimal(...) {
 #endif
 
 // Checks if the first argument is equal to the second argument.
-#define pl_equal(X, ...) \
-	(!pl_compare(X, __VA_ARGS__))
+#define pl_equal(lhs, ...) \
+	(!pl_compare(lhs, __VA_ARGS__))
 
 // Checks if the first argument is less than the second argument.
-#define pl_less(X, ...) \
-	(pl_compare(X, __VA_ARGS__) < 0)
+#define pl_less(lhs, ...) \
+	(pl_compare(lhs, __VA_ARGS__) < 0)
 
 // Checks if the first argument is less than or equal to the second argument.
-#define pl_less_equal(X, ...) \
-	(pl_compare(X, __VA_ARGS__) <= 0)
+#define pl_less_equal(lhs, ...) \
+	(pl_compare(lhs, __VA_ARGS__) <= 0)
 
 // Checks if the first argument is greater than the second argument.
-#define pl_greater(X, ...) \
-	(pl_compare(X, __VA_ARGS__) > 0)
+#define pl_greater(lhs, ...) \
+	(pl_compare(lhs, __VA_ARGS__) > 0)
 
 // Checks if the first argument is greater than or equal to the second argument.
-#define pl_greater_equal(X, ...) \
-	(pl_compare(X, __VA_ARGS__) >= 0)
+#define pl_greater_equal(lhs, ...) \
+	(pl_compare(lhs, __VA_ARGS__) >= 0)
 
 // Evaluates to the least value of the two arguments.
 // If not both of the arguments' types are integers, each is cast to their mutual common type.
-#define pl_min(X, ...) \
-	(pl_choose(pl_is_float((X) + (__VA_ARGS__)), (typeof((X) + (__VA_ARGS__)))detail_pl_min_float((X), __VA_ARGS__), pl_choose(pl_is_decimal((X) + (__VA_ARGS__)), (typeof((X) + (__VA_ARGS__)))detail_pl_min_decimal((X), __VA_ARGS__), (typeof(pl_choose_type((typeof(X))-1 < 0, pl_choose((typeof(__VA_ARGS__))-1 < 0, (X) + (__VA_ARGS__), X), __VA_ARGS__)))*(typeof((X) + (__VA_ARGS__))*)pl_min((typeof(X))-1 < 0, (typeof(__VA_ARGS__))-1 < 0, sizeof((X) + (__VA_ARGS__)), (unsigned char*)&(typeof((X) + (__VA_ARGS__))){ (typeof((X) + (__VA_ARGS__)))(X) }, (unsigned char*)&(typeof((X) + (__VA_ARGS__))){ (typeof((X) + (__VA_ARGS__)))(__VA_ARGS__) }, (unsigned char*)&(typeof((X) + (__VA_ARGS__))){ (typeof((X) + (__VA_ARGS__)))-1 }))))
+#define pl_min(lhs, ...) \
+	(pl_choose(pl_is_float((lhs) + (__VA_ARGS__)), (typeof((lhs) + (__VA_ARGS__)))detail_pl_min_float((lhs), __VA_ARGS__), pl_choose(pl_is_decimal((lhs) + (__VA_ARGS__)), (typeof((lhs) + (__VA_ARGS__)))detail_pl_min_decimal((lhs), __VA_ARGS__), (typeof(pl_choose_type((typeof(lhs))-1 < 0, pl_choose((typeof(__VA_ARGS__))-1 < 0, (lhs) + (__VA_ARGS__), lhs), __VA_ARGS__)))*(typeof((lhs) + (__VA_ARGS__))*)pl_min((typeof(lhs))-1 < 0, (typeof(__VA_ARGS__))-1 < 0, sizeof((lhs) + (__VA_ARGS__)), (unsigned char*)&(typeof((lhs) + (__VA_ARGS__))){ (typeof((lhs) + (__VA_ARGS__)))(lhs) }, (unsigned char*)&(typeof((lhs) + (__VA_ARGS__))){ (typeof((lhs) + (__VA_ARGS__)))(__VA_ARGS__) }, (unsigned char*)&(typeof((lhs) + (__VA_ARGS__))){ (typeof((lhs) + (__VA_ARGS__)))-1 }))))
 [[maybe_unused]] static inline unsigned char* (pl_min)(bool lhs_signed, bool rhs_signed, size_t size, unsigned char* lhs, unsigned char* rhs, unsigned char* max) {
 	for (size_t i = size; i--;) {
 		if (max[i]) {
@@ -149,8 +149,8 @@ static inline int detail_pl_min_decimal(...) {
 
 // Evaluates to the greatest value of the two integer or floating-point arguments.
 // If not both of the arguments' types are integers, each is cast to their mutual common type.
-#define pl_max(X, ...) \
-	(pl_choose(pl_is_float((X) + (__VA_ARGS__)), (typeof((X) + (__VA_ARGS__)))detail_pl_max_float((X), __VA_ARGS__), pl_choose(pl_is_decimal((X) + (__VA_ARGS__)), (typeof((X) + (__VA_ARGS__)))detail_pl_max_decimal((X), __VA_ARGS__), *(typeof((X) + (__VA_ARGS__))*)pl_max((typeof(X))-1 < 0, (typeof(__VA_ARGS__))-1 < 0, sizeof((X) + (__VA_ARGS__)), (unsigned char*)&(typeof((X) + (__VA_ARGS__))){ (typeof((X) + (__VA_ARGS__)))(X) }, (unsigned char*)&(typeof((X) + (__VA_ARGS__))){ (typeof((X) + (__VA_ARGS__)))(__VA_ARGS__) }, (unsigned char*)&(typeof((X) + (__VA_ARGS__))){ (typeof((X) + (__VA_ARGS__)))-1 }))))
+#define pl_max(lhs, ...) \
+	(pl_choose(pl_is_float((lhs) + (__VA_ARGS__)), (typeof((lhs) + (__VA_ARGS__)))detail_pl_max_float((lhs), __VA_ARGS__), pl_choose(pl_is_decimal((lhs) + (__VA_ARGS__)), (typeof((lhs) + (__VA_ARGS__)))detail_pl_max_decimal((lhs), __VA_ARGS__), *(typeof((lhs) + (__VA_ARGS__))*)pl_max((typeof(lhs))-1 < 0, (typeof(__VA_ARGS__))-1 < 0, sizeof((lhs) + (__VA_ARGS__)), (unsigned char*)&(typeof((lhs) + (__VA_ARGS__))){ (typeof((lhs) + (__VA_ARGS__)))(lhs) }, (unsigned char*)&(typeof((lhs) + (__VA_ARGS__))){ (typeof((lhs) + (__VA_ARGS__)))(__VA_ARGS__) }, (unsigned char*)&(typeof((lhs) + (__VA_ARGS__))){ (typeof((lhs) + (__VA_ARGS__)))-1 }))))
 [[maybe_unused]] static inline unsigned char* (pl_max)(bool lhs_signed, bool rhs_signed, size_t size, unsigned char* lhs, unsigned char* rhs, unsigned char* max) {
 	for (size_t i = size; i--;) {
 		if (max[i]) {

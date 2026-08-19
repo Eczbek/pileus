@@ -3,7 +3,7 @@
 
 typedef struct {
 	int x;
-	double y;
+	char y;
 } A;
 
 int main() {
@@ -12,8 +12,8 @@ int main() {
 	pl_swap(x, y);
 	pl_print("% <-> %\n", x, y);
 
-	A a = { 1, 2.0 };
-	A b = { 3, 4.0 };
+	A a = { 1, '2' };
+	A b = { 3, '4' };
 	pl_swap(a, b);
 	pl_print("(%, %) <-> (%, %)\n", a.x, a.y, b.x, b.y);
 }

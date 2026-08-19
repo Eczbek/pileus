@@ -8,8 +8,8 @@
 // Accepts a type and an optional size_t expression representing the initial capacity of the array.
 // Evaluates to a pointer to the body of a newly allocated array.
 // Must be deallocated by pl_array_free().
-#define pl_array(ITEM_TYPE, ...) \
-	((ITEM_TYPE*)pl_array(sizeof(ITEM_TYPE), __VA_OPT__(true ? (__VA_ARGS__) :) (64 / sizeof(ITEM_TYPE)) | (64 < sizeof(ITEM_TYPE))))
+#define pl_array(item_type, ...) \
+	((item_type*)pl_array(sizeof(item_type), __VA_OPT__(true ? (__VA_ARGS__) :) (64 / sizeof(item_type)) | (64 < sizeof(item_type))))
 static inline void* (pl_array)(size_t item_size, size_t capacity) {
 	if (size_t* array = malloc(sizeof(size_t) * 2 + item_size * capacity)) {
 		array[0] = 0;
@@ -21,23 +21,23 @@ static inline void* (pl_array)(size_t item_size, size_t capacity) {
 
 // Accepts the identifier of an array created by pl_array().
 // Deallocates the array.
-#define pl_array_free(ARRAY) \
-	(free((size_t*)(ARRAY) - 2))
+#define pl_array_free(array) \
+	(free((size_t*)(array) - 2))
 
 // Accepts the identifier of an array created by pl_array().
 // Evaluates to a size_t expression representing the number of elements in the array.
-#define pl_array_size(ARRAY) \
-	(*((const size_t*)(ARRAY) - 2))
+#define pl_array_size(array) \
+	(*((const size_t*)(array) - 2))
 
 // Accepts the identifier of an array created by pl_array().
 // Evaluates to a size_t expression representing the number of elements the array has capacity for.
-#define pl_array_capacity(ARRAY) \
-	(*((const size_t*)(ARRAY) - 1))
+#define pl_array_capacity(array) \
+	(*((const size_t*)(array) - 1))
 
 // Accepts the identifier of an array created by pl_array() and a size_t expression representing additional size.
 // If the sum of the array's size and additional size is greater than the array's capacity, reallocates the array such that its capacity is not less than said sum.
-#define pl_array_reserve(ARRAY, ...) \
-	((ARRAY) = pl_array_reserve((ARRAY), sizeof*(ARRAY), (__VA_ARGS__)))
+#define pl_array_reserve(array, ...) \
+	((array) = pl_array_reserve((array), sizeof*(array), (__VA_ARGS__)))
 static inline void* (pl_array_reserve)(void* array, size_t item_size, size_t additional_size) {
 	if (size_t target_capacity = pl_array_size(array) + additional_size; target_capacity > pl_array_capacity(array)) {
 		size_t new_capacity = pl_array_capacity(array);
@@ -57,8 +57,8 @@ static inline void* (pl_array_reserve)(void* array, size_t item_size, size_t add
 
 // Accepts the identifier of an array created by pl_array().
 // Reallocates the array such that its capacity matches its size.
-#define pl_array_shrink_to_fit(ARRAY) \
-	((ARRAY) = pl_array_shrink_to_fit((ARRAY), sizeof*(ARRAY)))
+#define pl_array_shrink_to_fit(array) \
+	((array) = pl_array_shrink_to_fit((array), sizeof*(array)))
 static inline void* (pl_array_shrink_to_fit)(void* array, size_t item_size) {
 	if (size_t* new_array = (pl_array)(item_size, pl_array_size(array))) {
 		memcpy(new_array, array, item_size * pl_array_size(array));
@@ -72,8 +72,8 @@ static inline void* (pl_array_shrink_to_fit)(void* array, size_t item_size) {
 // Accepts the identifier of an array created by pl_array(), a size_t expression representing an index in the array, and an expression to construct a new element at said index.
 // Reallocates the array if the its size is not less than its capacity.
 // If the index is less than the array's size, moves back every element after the index and inserts the new element at the index.
-#define pl_array_insert(ARRAY, INDEX, ...) \
-	((ARRAY) = pl_array_insert((ARRAY), sizeof*(ARRAY), (INDEX), &(typeof(__VA_ARGS__)){ (__VA_ARGS__) }))
+#define pl_array_insert(array, index, ...) \
+	((array) = pl_array_insert((array), sizeof*(array), (index), &(typeof(__VA_ARGS__)){ (__VA_ARGS__) }))
 static inline void* (pl_array_insert)(void* array, size_t item_size, size_t index, void* value) {
 	if ((index <= pl_array_size(array)) && (array = (pl_array_reserve)(array, item_size, 1))) {
 		for (size_t i = ++*((size_t*)array - 2); --i > index;) {
@@ -87,13 +87,13 @@ static inline void* (pl_array_insert)(void* array, size_t item_size, size_t inde
 // Accepts the identifier of an array created by pl_array() and an expression to construct a new element at the end of the array.
 // Reallocates the array if its size is not less than its capacity.
 // Appends the new element to the array.
-#define pl_array_push(ARRAY, ...) \
-	(pl_array_insert((ARRAY), pl_array_size(ARRAY), __VA_ARGS__))
+#define pl_array_push(array, ...) \
+	(pl_array_insert((array), pl_array_size(array), __VA_ARGS__))
 
 // Accepts the identifier of an array created by pl_array() and a size_t expression representing an index in the array.
 // If the index is less than the array's size, removes the element at the index and moves forward every element after the index.
-#define pl_array_erase(ARRAY, ...) \
-	(pl_array_erase((ARRAY), sizeof*(ARRAY), (__VA_ARGS__)))
+#define pl_array_erase(array, ...) \
+	(pl_array_erase((array), sizeof*(array), (__VA_ARGS__)))
 static inline void (pl_array_erase)(void* array, size_t item_size, size_t index) {
 	*((size_t*)array - 2) -= (index < pl_array_size(array));
 	while (index++ < pl_array_size(array)) {
@@ -103,7 +103,7 @@ static inline void (pl_array_erase)(void* array, size_t item_size, size_t index)
 
 // Accepts the identifier of an array created by pl_array().
 // Removes and returns the last element in the array.
-#define pl_array_pop(ARRAY) \
-	((ARRAY)[--*((size_t*)(ARRAY) - 2)])
+#define pl_array_pop(array) \
+	((array)[--*((size_t*)(array) - 2)])
 
 #endif
