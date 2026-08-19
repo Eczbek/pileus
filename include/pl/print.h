@@ -1,6 +1,7 @@
 #ifndef PL_PRINT_H
 #define PL_PRINT_H
 
+#include "./meta.h"
 #include "./preproc.h"
 #include <stdarg.h>
 #include <stddef.h>
@@ -35,7 +36,7 @@ enum {
 	detail_pl_print_sentinel
 };
 #define detail_pl_print_id(...) \
-	_Generic(typeof_unqual(__VA_ARGS__), \
+	_Generic(pl_fake_unqual(__VA_ARGS__), \
 		unsigned char: detail_pl_print_unsigned_char, \
 		unsigned short: detail_pl_print_unsigned_short, \
 		unsigned int: detail_pl_print_unsigned_int, \
