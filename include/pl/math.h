@@ -8,25 +8,13 @@
 #include <stddef.h>
 #include <tgmath.h>
 
-// Evaluates to the width of the integer argument.
-#define pl_int_width(...) \
-	pl_int_width(sizeof(__VA_ARGS__), (unsigned char*)&(typeof(__VA_ARGS__)){ (typeof(__VA_ARGS__))-1 })
-static inline size_t (pl_int_width)(size_t size, unsigned char* max) {
-	for (size_t i = size; i--;) {
-		if (size_t bits = stdc_trailing_ones(max[i])) {
-			return i * CHAR_BIT + bits;
-		}
-	}
-	return 0;
-}
-
-// Checks if the sign bit is set on the argument.
-// If the argument's type is not an integer, calls signbit().
+// Accepts an integer or floating-point argument.
+// Checks if the sign bit is set.
 #define pl_signbit(...) \
 	pl_choose(pl_is_int(__VA_ARGS__), (__VA_ARGS__) < 0, !!signbit(pl_choose(pl_is_int(__VA_ARGS__), 0.0, (__VA_ARGS__))))
 
+// Accepts an integer or floating-point argument.
 // Evaluates to the absolute value of the argument.
-// If the argument's type is not an integer, calls generic fabs().
 #define pl_abs(...) \
 	pl_choose(pl_is_int(__VA_ARGS__), pl_choose((typeof(__VA_ARGS__))-1 < 0, *(typeof(__VA_ARGS__)*)pl_abs(sizeof(__VA_ARGS__), (unsigned char*)&(typeof(__VA_ARGS__)){ (__VA_ARGS__) }), __VA_ARGS__), fabs(__VA_ARGS__))
 [[maybe_unused]] static inline unsigned char* (pl_abs)(size_t size, unsigned char* data) {
@@ -39,6 +27,7 @@ static inline size_t (pl_int_width)(size_t size, unsigned char* max) {
 	return data;
 }
 
+// Accepts two integer or floating-point arguments.
 // Evaluates to 0, -1, or 1 if the first argument is equal to, less than, or greater than the second argument, respectively.
 // If not both of the arguments' types are integers, the arguments are cast to their mutual common type.
 #define pl_compare(lhs, ...) \
@@ -103,6 +92,7 @@ static inline int detail_pl_compare_decimal(...) {
 #define pl_greater_equal(lhs, ...) \
 	(pl_compare(lhs, __VA_ARGS__) >= 0)
 
+// Accepts two integer or floating-point arguments.
 // Evaluates to the least value of the two arguments.
 // If not both of the arguments' types are integers, the arguments are cast to their mutual common type.
 #define pl_min(lhs, ...) \
@@ -147,7 +137,8 @@ static inline int detail_pl_min_decimal(...) {
 }
 #endif
 
-// Evaluates to the greatest value of the two integer or floating-point arguments.
+// Accepts two integer or floating-point arguments.
+// Evaluates to the greatest value of the two arguments.
 // If not both of the arguments' types are integers, the arguments are cast to their mutual common type.
 #define pl_max(lhs, ...) \
 	(pl_choose(pl_is_float((lhs) + (__VA_ARGS__)), (typeof((lhs) + (__VA_ARGS__)))detail_pl_max_float((lhs), __VA_ARGS__), pl_choose(pl_is_decimal((lhs) + (__VA_ARGS__)), (typeof((lhs) + (__VA_ARGS__)))detail_pl_max_decimal((lhs), __VA_ARGS__), *(typeof((lhs) + (__VA_ARGS__))*)pl_max((typeof(lhs))-1 < 0, (typeof(__VA_ARGS__))-1 < 0, sizeof((lhs) + (__VA_ARGS__)), (unsigned char*)&(typeof((lhs) + (__VA_ARGS__))){ (typeof((lhs) + (__VA_ARGS__)))(lhs) }, (unsigned char*)&(typeof((lhs) + (__VA_ARGS__))){ (typeof((lhs) + (__VA_ARGS__)))(__VA_ARGS__) }, (unsigned char*)&(typeof((lhs) + (__VA_ARGS__))){ (typeof((lhs) + (__VA_ARGS__)))-1 }))))
