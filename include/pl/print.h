@@ -210,13 +210,13 @@ static inline size_t detail_pl_format_to(const char* sloc_file, size_t sloc_line
 				} \
 			} \
 		} while (0)
-	for (; *format; escaped = *format++ == escape) {
+	for (const char* c = format; c && *c; escaped = *c++ == escape) {
 		if (escaped) {
-			if ((*format != placeholder) && (*format != escape)) {
+			if ((*c != placeholder) && (*c != escape)) {
 				detail_pl_print_char(escape);
 			}
-			detail_pl_print_char(*format);
-		} else if (*format == placeholder) {
+			detail_pl_print_char(*c);
+		} else if (*c == placeholder) {
 			switch (va_arg(args, int)) {
 				case detail_pl_format_id_unsigned_char:
 				case detail_pl_format_id_unsigned_short:
@@ -264,8 +264,8 @@ static inline size_t detail_pl_format_to(const char* sloc_file, size_t sloc_line
 				default:
 					unreachable();
 			}
-		} else if (*format != escape) {
-			detail_pl_print_char(*format);
+		} else if (*c != escape) {
+			detail_pl_print_char(*c);
 		}
 	}
 	if (escaped) {

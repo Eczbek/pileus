@@ -5,4 +5,5 @@ int main() {
 	pl_print("% %", 1);
 	pl_print("%", 1, 2);
 	pl_print("%", (int*)0);
+	pl_print(nullptr);
 }
