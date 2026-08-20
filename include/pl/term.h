@@ -19,26 +19,32 @@
  #warning platform does not provide terminal mode functions
 #endif
 
+// Clears the screen and resets the cursor position.
 static inline void pl_term_clear() {
 	printf("\x1B[2J\x1B[3J\x1B[H");
 }
 
+// Resets text colors and other text effects.
 static inline void pl_term_reset_style() {
 	printf("\x1B[0m");
 }
 
+// Saves the current screen and cursor position.
 static inline void pl_term_save_screen() {
 	printf("\x1B[?47h\x1B[s");
 }
 
+// Restores the saved screen and cursor position.
 static inline void pl_term_restore_screen() {
 	printf("\x1B[u\x1B[?47l");
 }
 
+// Makes the cursor invisible.
 static inline void pl_term_hide_cursor() {
 	printf("\x1B[?25l");
 }
 
+// Makes the cursor visibile.
 static inline void pl_term_show_cursor() {
 	printf("\x1B[?25h");
 }
@@ -49,50 +55,55 @@ typedef struct {
 	uint_least8_t b;
 } pl_term_color_t;
 
+// Accepts a hexadecimal color code or a pl_term_color_t.
+// Evaluates to a pl_term_color_t.
 #define pl_term_color(...) \
-	pl_term_color((uint_least32_t)(__VA_ARGS__))
+	_Generic(typeof_unqual(__VA_ARGS__), pl_term_color_t: (__VA_ARGS__), default: pl_term_color((uint_least32_t)_Generic(typeof_unqual(__VA_ARGS__), pl_term_color_t: 0, default: (__VA_ARGS__))))
 static inline pl_term_color_t (pl_term_color)(uint_least32_t x) {
 	return (pl_term_color_t){ (x >> 16) & 0xFF, (x >> 8) & 0xFF, x & 0xFF };
 }
 
+// Accepts a hexadecimal color code or a pl_term_color_t.
+// Sets the text color.
 #define pl_term_set_fg(...) \
-	(pl_choose(pl_is_int(__VA_ARGS__), pl_term_set_fg, detail_pl_term_fg)(__VA_ARGS__))
-static inline void detail_pl_term_fg(pl_term_color_t color) {
+	pl_term_set_fg(pl_term_color(__VA_ARGS__))
+static inline void (pl_term_set_fg)(pl_term_color_t color) {
 	printf("\x1B[38;2;%i;%i;%im", color.r, color.g, color.b);
 }
-static inline void (pl_term_set_fg)(uint_least32_t fg) {
-	detail_pl_term_fg(pl_term_color(fg));
-}
 
+// Accepts a hexadecimal color code or a pl_term_color_t.
 #define pl_term_set_bg(...) \
-	(pl_choose(pl_is_int(__VA_ARGS__), pl_term_set_bg, detail_pl_term_bg)(__VA_ARGS__))
-static inline void detail_pl_term_bg(pl_term_color_t color) {
+	pl_term_set_bg(pl_term_color(__VA_ARGS__))
+static inline void (pl_term_set_bg)(pl_term_color_t color) {
 	printf("\x1B[48;2;%i;%i;%im", color.r, color.g, color.b);
 }
-static inline void (pl_term_set_bg)(uint_least32_t fg) {
-	detail_pl_term_bg(pl_term_color(fg));
-}
 
+// Enables or disables bold text.
 static inline void pl_term_set_bold(bool option) {
 	printf("\x1B[%im", option ? 1 : 22);
 }
 
+// Enables or disables italic text.
 static inline void pl_term_set_italic(bool option) {
 	printf("\x1B[%im", option ? 3 : 23);
 }
 
+// Enables or disables underlined text.
 static inline void pl_term_set_underline(bool option) {
 	printf("\x1B[%im", option ? 4 : 24);
 }
 
+// Enables or disables blinking text.
 static inline void pl_term_set_blinking(bool option) {
 	printf("\x1B[%im", option ? 5 : 25);
 }
 
+// Enables or disables strikethrough text.
 static inline void pl_term_set_strikethrough(bool option) {
 	printf("\x1B[%im", option ? 9 : 29);
 }
 
+// Checks whether input is displayed.
 static inline bool pl_term_echoing() {
 #ifdef __unix__
 	struct termios mode;
@@ -107,6 +118,7 @@ static inline bool pl_term_echoing() {
 #endif
 }
 
+// Enables or disables input display.
 static inline void pl_term_set_echoing([[maybe_unused]] bool option) {
 #ifdef __unix__
 	struct termios mode;
@@ -121,6 +133,7 @@ static inline void pl_term_set_echoing([[maybe_unused]] bool option) {
 #endif
 }
 
+// Checks whether a newline must be input before input is readable.
 static inline bool pl_term_canonical() {
 #ifdef __unix__
 	struct termios mode;
@@ -135,6 +148,7 @@ static inline bool pl_term_canonical() {
 #endif
 }
 
+// Enables or disables waiting for a newline before input is readable.
 static inline void pl_term_set_canonical([[maybe_unused]] bool option) {
 #ifdef __unix__
 	struct termios mode;
@@ -149,6 +163,7 @@ static inline void pl_term_set_canonical([[maybe_unused]] bool option) {
 #endif
 }
 
+// Checks whether input signals are interpreted.
 static inline bool pl_term_signaling() {
 #ifdef __unix__
 	struct termios mode;
@@ -164,6 +179,7 @@ static inline bool pl_term_signaling() {
 #endif
 }
 
+// Enables or disables input signal interpreting.
 static inline void pl_term_set_signaling([[maybe_unused]] bool option) {
 #ifdef __unix__
 	struct termios mode;
@@ -179,6 +195,7 @@ static inline void pl_term_set_signaling([[maybe_unused]] bool option) {
 #endif
 }
 
+// Checks whether special output characters are interpreted.
 static inline bool pl_term_postprocessing() {
 #ifdef __unix__
 	struct termios mode;
@@ -193,6 +210,7 @@ static inline bool pl_term_postprocessing() {
 #endif
 }
 
+// Enables or disables special output character interpreting.
 static inline void pl_term_set_postprocessing([[maybe_unused]] bool option) {
 #ifdef __unix__
 	struct termios mode;
@@ -212,6 +230,7 @@ typedef struct {
 	size_t col;
 } pl_term_pos_t;
 
+// Evaluates to the cursor position.
 static inline pl_term_pos_t pl_term_pos() {
 #ifdef __unix__
 	bool echo = pl_term_echoing();
@@ -234,15 +253,17 @@ static inline pl_term_pos_t pl_term_pos() {
 	return (pl_term_pos_t){ (size_t)-1, (size_t)-1 };
 }
 
+// Sets the cursor position.
 #define pl_term_set_pos(...) \
-	pl_ignore_unused((pl_choose(pl_is_int(__VA_ARGS__), pl_term_set_pos, detail_pl_term_set_pos)(__VA_ARGS__)))
-static inline void (pl_term_set_pos)(size_t row, size_t col) {
-	printf("\x1B[%zu;%zuH", -~row, -~col);
+	pl_ignore_unused((pl_choose(pl_is_int(__VA_ARGS__), detail_pl_term_set_pos, pl_term_set_pos)(__VA_ARGS__)))
+static inline void (pl_term_set_pos)(pl_term_pos_t pos) {
+	printf("\x1B[%zu;%zuH", -~pos.row, -~pos.col);
 }
-static inline void detail_pl_term_set_pos(pl_term_pos_t pos) {
-	(pl_term_set_pos)(pos.row, pos.col);
+static inline void detail_pl_term_set_pos(size_t row, size_t col) {
+	(pl_term_set_pos)((pl_term_pos_t){ row, col });
 }
 
+// Evaluates to the size of the screen.
 static inline pl_term_pos_t pl_term_size() {
 #ifdef __unix
 	struct winsize size;
@@ -257,6 +278,7 @@ static inline pl_term_pos_t pl_term_size() {
 	return (pl_term_pos_t){ (size_t)-1, (size_t)-1 };
 }
 
+// Reads one character from input without blocking the thread.
 static inline int pl_term_input() {
 #ifdef __unix__
 	int mode = fcntl(STDIN_FILENO, F_GETFL);

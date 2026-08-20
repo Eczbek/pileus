@@ -8,30 +8,29 @@
 #include <stdio.h>
 
 // Accepts a format string and arguments to format.
-// Evaluates to a size_t value, representing the number of characters formatted.
+// Evaluates to the number of characters formatted.
 // Placeholders in the format string are represented by `%` and may be escaped with `/%`.
 // The number of placeholders must match the number of arguments passed.
 #define pl_print(format, ...) \
 	pl_print_to(stdout, (format), __VA_ARGS__)
 
 // Accepts a FILE* stream, a format string, and arguments to format.
-// Evaluates to ta size_t value, representing he number of characters formatted.
+// Evaluates to the number of characters formatted.
 #define pl_print_to(stream, format, ...) \
 	detail_pl_format_to((FILE*)(stream), true, (size_t)-1, (format), PL_EACH(detail_pl_format_id, __VA_ARGS__) detail_pl_format_id_sentinel)
 
 // Accepts a char* buffer, a format string, and arguments to format.
-// Evaluates to a size_t value, representing the number of characters formatted, including the terminator.
+// Evaluates to the number of characters formatted, including the terminator.
 #define pl_format_to(buffer, format, ...) \
 	pl_format_to_sized((buffer), (size_t)-1, (format), __VA_ARGS__)
 
 // Accepts a char* buffer, a size_t expression representing the buffer's maximum size, a format string, and arguments to format.
-// Evaluates to a size_t value, representing the number of characters formatted, including the terminator.
+// Evaluates to the number of characters formatted, including the terminator.
 #define pl_format_to_sized(buffer, size, format, ...) \
 	detail_pl_format_to((char*)(buffer), false, (size), (format), PL_EACH(detail_pl_format_id, __VA_ARGS__) detail_pl_format_id_sentinel)
 
 // Accepts a format string and arguments to format.
-// Evaluates to a size_t value, representing the number of characters formatted, including the terminator.
-// (Does not actually perform any formatting.)
+// Evaluates to the number of characters formatted, including the terminator.
 #define pl_format_size(format, ...) \
 	pl_format_to(nullptr, (format), __VA_ARGS__)
 
@@ -265,6 +264,8 @@ static inline size_t detail_pl_format_to(void* buffer, bool is_stream, size_t ma
 				case detail_pl_format_id_address:
 					detail_pl_print_one("%p", va_arg(args, void*));
 					continue;
+				default:
+					unreachable();
 			}
 		} else if (*format != escape) {
 			detail_pl_print_char(*format);
