@@ -24,6 +24,11 @@ static inline void pl_term_clear() {
 	printf("\x1B[2J\x1B[3J\x1B[H");
 }
 
+// Clears the screen and resets the cursor position.
+static inline void pl_term_clear_line() {
+	printf("\x1B[2K\x1B[G");
+}
+
 // Resets text colors and other text effects.
 static inline void pl_term_reset_style() {
 	printf("\x1B[0m");
@@ -104,7 +109,7 @@ static inline void pl_term_set_strikethrough(bool option) {
 }
 
 // Checks whether input is displayed.
-static inline bool pl_term_echoing() {
+static inline bool pl_term_echo() {
 #ifdef __unix__
 	struct termios mode;
 	tcgetattr(STDIN_FILENO, &mode);
@@ -119,7 +124,7 @@ static inline bool pl_term_echoing() {
 }
 
 // Enables or disables input display.
-static inline void pl_term_set_echoing([[maybe_unused]] bool option) {
+static inline void pl_term_set_echo([[maybe_unused]] bool option) {
 #ifdef __unix__
 	struct termios mode;
 	tcgetattr(STDIN_FILENO, &mode);
@@ -233,15 +238,15 @@ typedef struct {
 // Evaluates to the cursor position.
 static inline pl_term_pos_t pl_term_pos() {
 #ifdef __unix__
-	bool echo = pl_term_echoing();
-	pl_term_set_echoing(false);
+	bool echo = pl_term_echo();
+	pl_term_set_echo(false);
 	bool canonical = pl_term_canonical();
 	pl_term_set_canonical(false);
 	printf("\x1B[6n");
 	size_t row;
 	size_t col;
 	scanf("\x1B[%zu;%zuR", &row, &col);
-	pl_term_set_echoing(echo);
+	pl_term_set_echo(echo);
 	pl_term_set_canonical(canonical);
 	return (pl_term_pos_t){ ~-row, ~-col };
 #elifdef _WIN32
@@ -279,7 +284,7 @@ static inline pl_term_pos_t pl_term_size() {
 }
 
 // Reads one character from input without blocking the thread.
-static inline int pl_term_input() {
+static inline int pl_term_read() {
 #ifdef __unix__
 	int mode = fcntl(STDIN_FILENO, F_GETFL);
 	fcntl(STDIN_FILENO, F_SETFL, mode | O_NONBLOCK);
