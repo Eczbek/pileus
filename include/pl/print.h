@@ -6,6 +6,7 @@
 #include <stdarg.h>
 #include <stddef.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 // Accepts a format string and arguments to format.
 // Evaluates to the number of characters formatted.
@@ -17,7 +18,7 @@
 // Accepts a FILE* stream, a format string, and arguments to format.
 // Evaluates to the number of characters formatted.
 #define pl_print_to(stream, format, ...) \
-	detail_pl_format_to(__FILE__, __LINE__, (FILE*)(stream), true, (size_t)-1, (format), PL_EACH(detail_pl_format_id, __VA_ARGS__) detail_pl_format_id_sentinel)
+	detail_pl_format_to(__FILE__, __LINE__, (FILE*)(stream), true, (size_t)-1, (format), PL_EACH(detail_pl_format_assign, __VA_ARGS__) detail_pl_format_id_sentinel)
 
 // Accepts a char* buffer, a format string, and arguments to format.
 // Evaluates to the number of characters formatted, including the terminator.
@@ -27,7 +28,7 @@
 // Accepts a char* buffer, a size_t expression representing the buffer's maximum size, a format string, and arguments to format.
 // Evaluates to the number of characters formatted, including the terminator.
 #define pl_format_to_sized(buffer, size, format, ...) \
-	detail_pl_format_to(__FILE__, __LINE__, (char*)(buffer), false, (size), (format), PL_EACH(detail_pl_format_id, __VA_ARGS__) detail_pl_format_id_sentinel)
+	detail_pl_format_to(__FILE__, __LINE__, (char*)(buffer), false, (size), (format), PL_EACH(detail_pl_format_assign, __VA_ARGS__) detail_pl_format_id_sentinel)
 
 // Accepts a format string and arguments to format.
 // Evaluates to the number of characters formatted, including the terminator.
@@ -36,7 +37,6 @@
 
 enum {
 	detail_pl_format_id_sentinel,
-	detail_pl_format_id_unknown,
 	detail_pl_format_id_unsigned_char,
 	detail_pl_format_id_unsigned_short,
 	detail_pl_format_id_unsigned_int,
@@ -53,7 +53,8 @@ enum {
 	detail_pl_format_id_char,
 	detail_pl_format_id_bool,
 	detail_pl_format_id_string,
-	detail_pl_format_id_address
+	detail_pl_format_id_address,
+	detail_pl_format_id_unknown
 };
 #define detail_pl_format_id(...) \
 	_Generic(pl_fake_unqual(__VA_ARGS__), \
@@ -77,7 +78,9 @@ enum {
 		void*: detail_pl_format_id_address, \
 		const void*: detail_pl_format_id_address, \
 		default: detail_pl_format_id_unknown \
-	), (__VA_ARGS__),
+	)
+#define detail_pl_format_assign(...) \
+	(static_assert(detail_pl_format_id(__VA_ARGS__) != detail_pl_format_id_unknown, "unformattable argument: "#__VA_ARGS__), detail_pl_format_id(__VA_ARGS__)), (__VA_ARGS__),
 static inline size_t detail_pl_format_to(const char* sloc_file, size_t sloc_line, void* buffer, bool is_stream, size_t max_size, const char* format, ...) {
 	static constexpr char placeholder = '%';
 	static constexpr char escape = '/';
@@ -102,10 +105,6 @@ static inline size_t detail_pl_format_to(const char* sloc_file, size_t sloc_line
 			case detail_pl_format_id_sentinel:
 				bad_sentinel = true;
 				fprintf(stderr, "%s:%zu: too few arguments for format ", sloc_file, sloc_line);
-				break;
-			case detail_pl_format_id_unknown:
-				bad_arg = true;
-				fprintf(stderr, "%s:%zu: unprintable argument for placeholder at index %zu in format ", sloc_file, sloc_line, i);
 				break;
 			case detail_pl_format_id_unsigned_char:
 			case detail_pl_format_id_unsigned_short:
@@ -175,7 +174,7 @@ static inline size_t detail_pl_format_to(const char* sloc_file, size_t sloc_line
 			fprintf(stderr, " (expects %zu argument%s)", placeholder_count, (placeholder_count == 1) ? "" : "s");
 		}
 		fputc('\n', stderr);
-		return 0;
+		abort();
 	}
 	va_start(args, format);
 	bool escaped = false;
