@@ -3,6 +3,7 @@
 
 #include "./meta.h"
 #include "./preproc.h"
+#include "./static_assert.h"
 #include <stdarg.h>
 #include <stddef.h>
 #include <stdio.h>
@@ -80,7 +81,7 @@ enum {
 		default: detail_pl_format_id_unknown \
 	)
 #define detail_pl_format_assign(...) \
-	(static_assert(detail_pl_format_id(__VA_ARGS__) != detail_pl_format_id_unknown, "unformattable argument: "#__VA_ARGS__), detail_pl_format_id(__VA_ARGS__)), (__VA_ARGS__),
+	(pl_static_assert(detail_pl_format_id(__VA_ARGS__) != detail_pl_format_id_unknown, "unformattable argument: "#__VA_ARGS__), detail_pl_format_id(__VA_ARGS__)), (__VA_ARGS__),
 static inline size_t detail_pl_format_to(const char* sloc_file, size_t sloc_line, void* buffer, bool is_stream, size_t max_size, const char* format, ...) {
 	static constexpr char placeholder = '%';
 	static constexpr char escape = '/';
