@@ -61,15 +61,15 @@ static_assert(pl_is_array(int[]));
 static_assert(pl_is_array(int[1]));
 static_assert(!pl_is_array(int()));
 
-static_assert(!pl_is_bounded_array(int));
-static_assert(pl_is_bounded_array(int[1]));
-static_assert(!pl_is_bounded_array(int[]));
-static_assert(!pl_is_bounded_array(int()));
+static_assert(!pl_is_sized_array(int));
+static_assert(pl_is_sized_array(int[1]));
+static_assert(!pl_is_sized_array(int[]));
+static_assert(!pl_is_sized_array(int()));
 
-static_assert(!pl_is_unbounded_array(int));
-static_assert(!pl_is_unbounded_array(int[1]));
-static_assert(pl_is_unbounded_array(int[]));
-static_assert(!pl_is_unbounded_array(int()));
+static_assert(!pl_is_unsized_array(int));
+static_assert(!pl_is_unsized_array(int[1]));
+static_assert(pl_is_unsized_array(int[]));
+static_assert(!pl_is_unsized_array(int()));
 
 static_assert(pl_array_extent(int[1]) == 1);
 static_assert(pl_array_extent(int[2]) == 2);

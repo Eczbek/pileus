@@ -55,15 +55,15 @@
  #define pl_is_array(...) _Generic(pl_fake(__VA_ARGS__),typeof(__VA_ARGS__)*:0,default:!pl_is_decayed(__VA_ARGS__))
 #endif
 
-// Evaluates to whether the argument's type is a bounded array type.
-#define pl_is_bounded_array(...) _Generic(pl_fake(__VA_ARGS__),typeof(__VA_ARGS__)*:0,default:_Generic(typeof_unqual(__VA_ARGS__),typeof_unqual(pl_decay(__VA_ARGS__)):0,default:!pl_is_unbounded_array(__VA_ARGS__)))
+// Evaluates to whether the argument's type is a sized array type.
+#define pl_is_sized_array(...) _Generic(pl_fake(__VA_ARGS__),typeof(__VA_ARGS__)*:0,default:_Generic(typeof_unqual(__VA_ARGS__),typeof_unqual(pl_decay(__VA_ARGS__)):0,default:!pl_is_unsized_array(__VA_ARGS__)))
 
-// Evaluates to whether the argument's type is an unbounded array type.
-#define pl_is_unbounded_array(...) _Generic(typeof(__VA_ARGS__),typeof(*_Generic(typeof_unqual(__VA_ARGS__),typeof_unqual(pl_decay(__VA_ARGS__)):(int*)0,default:_Generic(pl_fake(__VA_ARGS__),typeof(__VA_ARGS__)*:(int*)0,default:pl_fake(__VA_ARGS__))))[1]:_Generic(typeof(__VA_ARGS__),typeof(*_Generic(typeof_unqual(__VA_ARGS__),typeof_unqual(pl_decay(__VA_ARGS__)):(int*)0,default:_Generic(pl_fake(__VA_ARGS__),typeof(__VA_ARGS__)*:(int*)0,default:pl_fake(__VA_ARGS__))))[2]:1,default:0),default:0)
+// Evaluates to whether the argument's type is an unsized array type.
+#define pl_is_unsized_array(...) _Generic(typeof(__VA_ARGS__),typeof(*_Generic(typeof_unqual(__VA_ARGS__),typeof_unqual(pl_decay(__VA_ARGS__)):(int*)0,default:_Generic(pl_fake(__VA_ARGS__),typeof(__VA_ARGS__)*:(int*)0,default:pl_fake(__VA_ARGS__))))[1]:_Generic(typeof(__VA_ARGS__),typeof(*_Generic(typeof_unqual(__VA_ARGS__),typeof_unqual(pl_decay(__VA_ARGS__)):(int*)0,default:_Generic(pl_fake(__VA_ARGS__),typeof(__VA_ARGS__)*:(int*)0,default:pl_fake(__VA_ARGS__))))[2]:1,default:0),default:0)
 
-// If the argument's type is a bounded array type, evaluates to the array's size.
+// If the argument's type is a sized array type, evaluates to the array's size.
 // Otherwise, evaluates to zero.
-#define pl_array_extent(...) (sizeof(pl_choose(pl_is_bounded_array(__VA_ARGS__),pl_fake(__VA_ARGS__),0))/sizeof(*pl_fake(pl_choose_type(pl_is_bounded_array(__VA_ARGS__),typeof(__VA_ARGS__),int(*)[2]))))
+#define pl_array_extent(...) (sizeof(pl_choose(pl_is_sized_array(__VA_ARGS__),pl_fake(__VA_ARGS__),0))/sizeof(*pl_fake(pl_choose_type(pl_is_sized_array(__VA_ARGS__),typeof(__VA_ARGS__),int(*)[2]))))
 
 #ifdef __GNUC__
  // If the argument's type is a pointer type, evaluates to the pointee type.
