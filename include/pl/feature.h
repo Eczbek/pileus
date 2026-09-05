@@ -27,6 +27,8 @@
 
 #ifdef __SIZEOF_INT128__
  #define pl_feature_int128 1
+ __extension__ typedef unsigned __int128 pl_uint128_t;
+ __extension__ typedef __int128 pl_int128_t;
 #else
  #define pl_feature_int128 0
 #endif

@@ -9,6 +9,11 @@
  #warning compiler does not support restrict-qualified atomic pointer types
 #endif
 
+#include "./feature.h"
+#include "./preproc.h"
+#include <stddef.h>
+#include <stdint.h>
+
 // Evaluates to whether the arguments' types are compatible.
 #define pl_is_same(x, ...) _Generic((typeof(x)*)0,typeof(__VA_ARGS__)*:1,default:0)
 
@@ -89,21 +94,21 @@
 #ifdef __GNUC__
  #define pl_is_int(...) (__builtin_classify_type(pl_fake(__VA_ARGS__))==1)
 #else
- #define pl_is_int(...) (pl_is_unsigned(__VA_ARGS__)||pl_is_signed(__VA_ARGS__))
+ #define pl_is_int(...) _Generic(typeof_unqual(__VA_ARGS__),unsigned char:1,unsigned short:1,unsigned int:1,unsigned long:1,unsigned long long:1,signed char:1,short:1,int:1,long:1,long long:1,char:1,bool:1,default:_Generic(typeof_unqual(__VA_ARGS__),PL_IF(pl_feature_int8)(uint8_t:1,int8_t:1,)()PL_IF(pl_feature_int16)(uint16_t:1,int16_t:1,)()PL_IF(pl_feature_int32)(uint32_t:1,int32_t:1,)()PL_IF(pl_feature_int64)(uint64_t:1,int64_t:1,)()PL_IF(pl_feature_int128)(pl_uint128_t:1,pl_int128_t:1,)()default:_Generic(typeof_unqual(__VA_ARGS__),size_t:1,ptrdiff_t:1,default:_Generic(typeof_unqual(__VA_ARGS__),uintmax_t:1,intmax_t:1,default:_Generic(typeof_unqual(__VA_ARGS__),PL_IF(pl_feature_intptr)(uintptr_t:1,intptr_t:1,)()default:_Generic(typeof_unqual(__VA_ARGS__),uint_least8_t:1,int_least8_t:1,default:_Generic(typeof_unqual(__VA_ARGS__),uint_least16_t:1,int_least16_t:1,default:_Generic(typeof_unqual(__VA_ARGS__),uint_least32_t:1,int_least32_t:1,default:_Generic(typeof_unqual(__VA_ARGS__),uint_least64_t:1,int_least64_t:1,default:_Generic(typeof_unqual(__VA_ARGS__),uint_fast8_t:1,int_fast8_t:1,default:_Generic(typeof_unqual(__VA_ARGS__),uint_fast16_t:1,int_fast16_t:1,default:_Generic(typeof_unqual(__VA_ARGS__),uint_fast32_t:1,int_fast32_t:1,default:_Generic(typeof_unqual(__VA_ARGS__),uint_fast64_t:1,int_fast64_t:1,default:0)))))))))))))
 #endif
 
 // Evaluates to whether the argument's type is an unsigned integer type.
 #ifdef __GNUC__
  #define pl_is_unsigned(...) (__builtin_choose_expr(pl_is_int(__VA_ARGS__),(typeof(__VA_ARGS__))-1>0,0))
 #else
- #define pl_is_unsigned(...) _Generic(typeof_unqual(__VA_ARGS__),unsigned char:1,unsigned short:1,unsigned int:1,unsigned long:1,unsigned long long:1,char:(char)-1<0,default:0)
+ #define pl_is_unsigned(...) _Generic(typeof_unqual(__VA_ARGS__),unsigned char:1,unsigned short:1,unsigned int:1,unsigned long:1,unsigned long long:1,char:(char)-1>0,bool:1,default:_Generic(typeof_unqual(__VA_ARGS__),PL_IF(pl_feature_int8)(uint8_t:1,)()PL_IF(pl_feature_int16)(uint16_t:1,)()PL_IF(pl_feature_int32)(uint32_t:1,)()PL_IF(pl_feature_int64)(uint64_t:1,)()PL_IF(pl_feature_int128)(pl_uint128_t:1,)()default:_Generic(typeof_unqual(__VA_ARGS__),size_t:1,default:_Generic(typeof_unqual(__VA_ARGS__),uintmax_t:1,default:_Generic(typeof_unqual(__VA_ARGS__),PL_IF(pl_feature_intptr)(uintptr_t:1,)()default:_Generic(typeof_unqual(__VA_ARGS__),uint_least8_t:1,default:_Generic(typeof_unqual(__VA_ARGS__),uint_least16_t:1,default:_Generic(typeof_unqual(__VA_ARGS__),uint_least32_t:1,default:_Generic(typeof_unqual(__VA_ARGS__),uint_least64_t:1,default:_Generic(typeof_unqual(__VA_ARGS__),uint_fast8_t:1,default:_Generic(typeof_unqual(__VA_ARGS__),uint_fast16_t:1,default:_Generic(typeof_unqual(__VA_ARGS__),uint_fast32_t:1,default:_Generic(typeof_unqual(__VA_ARGS__),uint_fast64_t:1,default:0)))))))))))))
 #endif
 
 // Evaluates to whether the argument's type is a signed integer type.
 #ifdef __GNUC__
  #define pl_is_signed(...) (__builtin_choose_expr(pl_is_int(__VA_ARGS__),(typeof(__VA_ARGS__))-1<0,0))
 #else
- #define pl_is_signed(...) _Generic(typeof_unqual(__VA_ARGS__),signed char:1,short:1,int:1,long:1,long long:1,char:(char)-1<0,default:0)
+ #define pl_is_signed(...) _Generic(typeof_unqual(__VA_ARGS__),signed char:1,short:1,int:1,long:1,long long:1,char:(char)-1<0,default:_Generic(typeof_unqual(__VA_ARGS__),PL_IF(pl_feature_int8)(int8_t:1,)()PL_IF(pl_feature_int16)(int16_t:1,)()PL_IF(pl_feature_int32)(int32_t:1,)()PL_IF(pl_feature_int64)(int64_t:1,)()PL_IF(pl_feature_int128)(pl_int128_t:1,)()default:_Generic(typeof_unqual(__VA_ARGS__),ptrdiff_t:1,default:_Generic(typeof_unqual(__VA_ARGS__),intmax_t:1,default:_Generic(typeof_unqual(__VA_ARGS__),PL_IF(pl_feature_intptr)(intptr_t:1,)()default:_Generic(typeof_unqual(__VA_ARGS__),int_least8_t:1,default:_Generic(typeof_unqual(__VA_ARGS__),int_least16_t:1,default:_Generic(typeof_unqual(__VA_ARGS__),int_least32_t:1,default:_Generic(typeof_unqual(__VA_ARGS__),int_least64_t:1,default:_Generic(typeof_unqual(__VA_ARGS__),int_fast8_t:1,default:_Generic(typeof_unqual(__VA_ARGS__),int_fast16_t:1,default:_Generic(typeof_unqual(__VA_ARGS__),int_fast32_t:1,default:_Generic(typeof_unqual(__VA_ARGS__),int_fast64_t:1,default:0)))))))))))))
 #endif
 
 // Evaluates to whether the argument's type is a floating-point type.
