@@ -6,10 +6,10 @@
 int main() {
 	pl_term_save_screen();
 	pl_term_hide_cursor();
-	pl_term_set_echoing(false);
+	pl_term_set_echo(false);
 	pl_term_set_canonical(false);
 
-	for (unsigned long long frame = 0; pl_term_input() == EOF; ++frame) {
+	for (unsigned long long frame = 0; pl_term_read() == EOF; ++frame) {
 		pl_term_clear();
 
 		pl_term_set_fg(0xFF00FF);
@@ -37,7 +37,7 @@ int main() {
 	}
 
 	pl_term_set_canonical(true);
-	pl_term_set_echoing(true);
+	pl_term_set_echo(true);
 	pl_term_show_cursor();
 	pl_term_restore_screen();
 }
