@@ -9,10 +9,12 @@
 #define pl_swap(lhs, rhs) \
 	((void)_Generic(typeof_unqual(lhs), typeof_unqual(rhs): pl_swap(true, sizeof(lhs), &(lhs), &(rhs), &(typeof_unqual(lhs)){}), default: _Generic(typeof_unqual(lhs), typeof_unqual(rhs): (int){}, default: (lhs)) = (typeof(_Generic(typeof_unqual(lhs), typeof_unqual(rhs): 0, default: (lhs)))){ (typeof(_Generic(typeof_unqual(lhs), typeof_unqual(rhs): 0, default: (lhs))))*(typeof(_Generic(typeof_unqual(lhs), typeof_unqual(rhs): 0, default: (rhs)))*)pl_swap(false, sizeof(rhs), &(rhs), &(typeof(_Generic(typeof_unqual(lhs), typeof_unqual(rhs): 0, default: (rhs)))){ (typeof(_Generic(typeof_unqual(lhs), typeof_unqual(rhs): 0, default: (rhs))))(_Generic(typeof_unqual(lhs), typeof_unqual(rhs): 0, default: (lhs))) }, &(typeof_unqual(rhs)){}) }))
 static inline void* (pl_swap)(bool same_type, size_t size, void* lhs, void* rhs, void* tmp) {
-	memcpy(tmp, lhs, size);
-	memcpy(lhs, rhs, size);
-	if (same_type) {
-		memcpy(rhs, tmp, size);
+	if (lhs != rhs) {
+		memcpy(tmp, lhs, size);
+		memcpy(lhs, rhs, size);
+		if (same_type) {
+			memcpy(rhs, tmp, size);
+		}
 	}
 	return tmp;
 }
