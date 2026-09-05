@@ -14,11 +14,11 @@
 static inline void* (pl_array)(size_t item_size, size_t item_align, size_t capacity) {
 	if (capacity) {
 		size_t max_align = (alignof(size_t) < item_align) ? item_align : alignof(size_t);
-		size_t aligned_capacity = sizeof(size_t) * 2 + item_size * capacity;
-		if (size_t remainder = aligned_capacity % max_align) {
-			aligned_capacity += max_align - remainder;
+		size_t aligned_size = sizeof(size_t) * 2 + item_size * capacity;
+		if (size_t rem = aligned_size % max_align) {
+			aligned_size += max_align - rem;
 		}
-		if (size_t* array = aligned_alloc(max_align, aligned_capacity)) {
+		if (size_t* array = aligned_alloc(max_align, aligned_size)) {
 			array[0] = 0;
 			array[1] = capacity;
 			return ((sizeof(size_t) * 2) < max_align) ? ((unsigned char*)array + max_align) : (void*)(array + 2);
