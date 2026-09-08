@@ -18,7 +18,7 @@
 // Accepts an integer or floating-point argument.
 // Evaluates to the absolute value of the argument.
 #define pl_abs(...) \
-	pl_choose(pl_is_int(__VA_ARGS__), pl_choose((typeof(__VA_ARGS__))-1 < 0, (typeof(__VA_ARGS__))*(typeof(__VA_ARGS__)*)pl_abs(pl_int_width(__VA_ARGS__), (unsigned char*)&(typeof(__VA_ARGS__)){ (__VA_ARGS__) }), __VA_ARGS__), fabs(__VA_ARGS__))
+	pl_choose(pl_is_int(__VA_ARGS__), pl_choose((typeof(__VA_ARGS__))-1 < 0, (pl_make_unsigned_int(__VA_ARGS__))*(typeof(__VA_ARGS__)*)pl_abs(pl_int_width(__VA_ARGS__), (unsigned char*)&(typeof(__VA_ARGS__)){ (__VA_ARGS__) }), __VA_ARGS__), fabs(__VA_ARGS__))
 static inline unsigned char* (pl_abs)(size_t width, unsigned char* data) {
 	if (1 & (data[~-width / CHAR_BIT] >> (~-width % CHAR_BIT))) {
 		bool carry = true;
