@@ -3,9 +3,6 @@
 #include <limits.h>
 #include <stdio.h>
 
-#define TEST_INT_WIDTH(...) \
-	pl_print("int_width(%) -> %\n", #__VA_ARGS__, pl_int_width(__VA_ARGS__))
-
 #define TEST_SIGNBIT(...) \
 	pl_print("signbit(%) -> %\n", #__VA_ARGS__, pl_signbit(__VA_ARGS__))
 
@@ -22,12 +19,6 @@
 	pl_print("max(%, %) -> %\n", #X, #__VA_ARGS__, pl_max((X), __VA_ARGS__))
 
 int main() {
-	TEST_INT_WIDTH(char);
-	TEST_INT_WIDTH(int);
-	TEST_INT_WIDTH(unsigned long long);
-
-	puts("-------------");
-
 	TEST_SIGNBIT(0);
 	TEST_SIGNBIT(1);
 	TEST_SIGNBIT(-1);

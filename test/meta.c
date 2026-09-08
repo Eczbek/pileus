@@ -114,28 +114,43 @@ static_assert(!pl_is_int(int()));
 __extension__ static_assert(pl_is_int(__int128));
 #endif
 
-static_assert(pl_is_unsigned(unsigned char));
-static_assert(pl_is_unsigned(unsigned short));
-static_assert(pl_is_unsigned(unsigned int));
-static_assert(pl_is_unsigned(unsigned long));
-static_assert(pl_is_unsigned(unsigned long long));
-static_assert(((char)-1 < 0) || pl_is_unsigned(char));
-static_assert(!pl_is_unsigned(short));
-static_assert(!pl_is_unsigned(int));
-static_assert(!pl_is_unsigned(long));
-static_assert(!pl_is_unsigned(long long));
+static_assert(pl_is_unsigned_int(unsigned char));
+static_assert(pl_is_unsigned_int(unsigned short));
+static_assert(pl_is_unsigned_int(unsigned int));
+static_assert(pl_is_unsigned_int(unsigned long));
+static_assert(pl_is_unsigned_int(unsigned long long));
+static_assert(((char)-1 < 0) || pl_is_unsigned_int(char));
+static_assert(!pl_is_unsigned_int(short));
+static_assert(!pl_is_unsigned_int(int));
+static_assert(!pl_is_unsigned_int(long));
+static_assert(!pl_is_unsigned_int(long long));
 
-static_assert(pl_is_signed(signed char));
-static_assert(pl_is_signed(short));
-static_assert(pl_is_signed(int));
-static_assert(pl_is_signed(long));
-static_assert(pl_is_signed(long long));
-static_assert(((char)-1 > 0) || pl_is_signed(char));
-static_assert(!pl_is_signed(unsigned char));
-static_assert(!pl_is_signed(unsigned short));
-static_assert(!pl_is_signed(unsigned int));
-static_assert(!pl_is_signed(unsigned long));
-static_assert(!pl_is_signed(unsigned long long));
+static_assert(pl_is_signed_int(signed char));
+static_assert(pl_is_signed_int(short));
+static_assert(pl_is_signed_int(int));
+static_assert(pl_is_signed_int(long));
+static_assert(pl_is_signed_int(long long));
+static_assert(((char)-1 > 0) || pl_is_signed_int(char));
+static_assert(!pl_is_signed_int(unsigned char));
+static_assert(!pl_is_signed_int(unsigned short));
+static_assert(!pl_is_signed_int(unsigned int));
+static_assert(!pl_is_signed_int(unsigned long));
+static_assert(!pl_is_signed_int(unsigned long long));
+
+static_assert(pl_is_same(pl_make_unsigned_int(int), unsigned int));
+static_assert(pl_is_same(pl_make_unsigned_int(unsigned int), unsigned int));
+static_assert(pl_is_same(pl_make_unsigned_int(float), float));
+
+static_assert(pl_is_same(pl_make_signed_int(unsigned int), int));
+static_assert(pl_is_same(pl_make_signed_int(int), int));
+static_assert(pl_is_same(pl_make_signed_int(float), float));
+
+static_assert(pl_int_width(char) >= 8);
+static_assert(pl_int_width(short) >= 16);
+static_assert(pl_int_width(int) >= 16);
+static_assert(pl_int_width(long) >= 32);
+static_assert(pl_int_width(long long) >= 64);
+static_assert(pl_int_width(float) == 0);
 
 static_assert(!pl_is_float(int));
 static_assert(pl_is_float(float));
