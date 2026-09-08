@@ -13,28 +13,23 @@
 // Evaluates to the number of characters formatted.
 // Placeholders in the format string are represented by `%` and may be escaped with `/%`.
 // The number of placeholders must match the number of arguments passed.
-#define pl_print(format, ...) \
-	pl_print_to(stdout, (format), __VA_ARGS__)
+#define pl_print(format, ...) pl_print_to(stdout,(format),__VA_ARGS__)
 
 // Accepts a FILE* stream, a format string, and arguments to format.
 // Evaluates to the number of characters formatted.
-#define pl_print_to(stream, format, ...) \
-	detail_pl_format_to(__FILE__, __LINE__, (FILE*)(stream), true, (size_t)-1, (format), PL_EACH(detail_pl_format_assign, __VA_ARGS__) detail_pl_format_id_sentinel)
+#define pl_print_to(stream, format, ...) detail_pl_format_to(__FILE__,__LINE__,(FILE*)(stream),1,(size_t)-1,(format),PL_EACH(detail_pl_format_assign,__VA_ARGS__)detail_pl_format_id_sentinel)
 
 // Accepts a char* buffer, a format string, and arguments to format.
 // Evaluates to the number of characters formatted, including the terminator.
-#define pl_format_to(buffer, format, ...) \
-	pl_format_to_sized((buffer), (size_t)-1, (format), __VA_ARGS__)
+#define pl_format_to(buffer, format, ...) pl_format_to_sized((buffer),(size_t)-1,(format),__VA_ARGS__)
 
 // Accepts a char* buffer, a size_t expression representing the buffer's maximum size, a format string, and arguments to format.
 // Evaluates to the number of characters formatted, including the terminator.
-#define pl_format_to_sized(buffer, size, format, ...) \
-	detail_pl_format_to(__FILE__, __LINE__, (char*)(buffer), false, (size), (format), PL_EACH(detail_pl_format_assign, __VA_ARGS__) detail_pl_format_id_sentinel)
+#define pl_format_to_sized(buffer, size, format, ...) detail_pl_format_to(__FILE__,__LINE__,(char*)(buffer),0,(size),(format),PL_EACH(detail_pl_format_assign,__VA_ARGS__)detail_pl_format_id_sentinel)
 
 // Accepts a format string and arguments to format.
 // Evaluates to the number of characters formatted, including the terminator.
-#define pl_format_size(format, ...) \
-	pl_format_to(nullptr, (format), __VA_ARGS__)
+#define pl_format_size(format, ...) pl_format_to(0,(format),__VA_ARGS__)
 
 enum {
 	detail_pl_format_id_sentinel,
@@ -57,31 +52,8 @@ enum {
 	detail_pl_format_id_address,
 	detail_pl_format_id_unknown
 };
-#define detail_pl_format_id(...) \
-	_Generic(pl_fake_unqual(__VA_ARGS__), \
-		unsigned char: detail_pl_format_id_unsigned_char, \
-		unsigned short: detail_pl_format_id_unsigned_short, \
-		unsigned int: detail_pl_format_id_unsigned_int, \
-		unsigned long: detail_pl_format_id_unsigned_long, \
-		unsigned long long: detail_pl_format_id_unsigned_long_long, \
-		signed char: detail_pl_format_id_signed_char, \
-		short: detail_pl_format_id_short, \
-		int: detail_pl_format_id_int, \
-		long: detail_pl_format_id_long, \
-		long long: detail_pl_format_id_long_long, \
-		float: detail_pl_format_id_float, \
-		double: detail_pl_format_id_double, \
-		long double: detail_pl_format_id_long_double, \
-		char: detail_pl_format_id_char, \
-		bool: detail_pl_format_id_bool, \
-		char*: detail_pl_format_id_string, \
-		const char*: detail_pl_format_id_string, \
-		void*: detail_pl_format_id_address, \
-		const void*: detail_pl_format_id_address, \
-		default: detail_pl_format_id_unknown \
-	)
-#define detail_pl_format_assign(...) \
-	(pl_static_assert(detail_pl_format_id(__VA_ARGS__) != detail_pl_format_id_unknown, "unformattable argument: "#__VA_ARGS__), detail_pl_format_id(__VA_ARGS__)), (__VA_ARGS__),
+#define detail_pl_format_id(...) _Generic(pl_fake_unqual(__VA_ARGS__),unsigned char:detail_pl_format_id_unsigned_char,unsigned short:detail_pl_format_id_unsigned_short,typeof(0u):detail_pl_format_id_unsigned_int,typeof(0ul):detail_pl_format_id_unsigned_long,typeof(0ull):detail_pl_format_id_unsigned_long_long,signed char:detail_pl_format_id_signed_char,short:detail_pl_format_id_short,int:detail_pl_format_id_int,long:detail_pl_format_id_long,long long:detail_pl_format_id_long_long,float:detail_pl_format_id_float,double:detail_pl_format_id_double,long double:detail_pl_format_id_long_double,char:detail_pl_format_id_char,bool:detail_pl_format_id_bool,char*:detail_pl_format_id_string,const char*:detail_pl_format_id_string,void*:detail_pl_format_id_address,const void*:detail_pl_format_id_address,default:detail_pl_format_id_unknown)
+#define detail_pl_format_assign(...) (pl_static_assert(detail_pl_format_id(__VA_ARGS__)!=detail_pl_format_id_unknown,"unformattable argument: "#__VA_ARGS__),detail_pl_format_id(__VA_ARGS__)),(__VA_ARGS__),
 static inline size_t detail_pl_format_to(const char* sloc_file, size_t sloc_line, void* buffer, bool is_stream, size_t max_size, const char* format, ...) {
 	static constexpr char placeholder = '%';
 	static constexpr char escape = '/';
@@ -180,36 +152,34 @@ static inline size_t detail_pl_format_to(const char* sloc_file, size_t sloc_line
 	va_start(args, format);
 	bool escaped = false;
 	size_t size = 0;
-	#define detail_pl_print_char(C) \
-		do { \
-			if ((size + !is_stream) < max_size) { \
-				if (buffer) { \
-					if (is_stream) { \
-						fputc((C), buffer); \
-					} else { \
-						((char*)buffer)[size] = (C); \
-					} \
-				} \
-				++size; \
-			} \
-		} while (0)
-	#define detail_pl_print_one(format, ARG) \
-		do { \
-			if ((size + !is_stream) < max_size) { \
-				if (buffer) { \
-					if (is_stream) { \
-						size += (size_t)fprintf(buffer, (format), (ARG)); \
-					} else { \
-						size += (size_t)snprintf((char*)buffer + size, max_size - size, (format), (ARG)); \
-						if (size >= ~-max_size) { \
-							size = ~-max_size; \
-						} \
-					} \
+	#define detail_pl_print_char(C) do { \
+		if ((size + !is_stream) < max_size) { \
+			if (buffer) { \
+				if (is_stream) { \
+					fputc((C), buffer); \
 				} else { \
-					size += (size_t)snprintf(nullptr, 0, (format), (ARG)); \
+					((char*)buffer)[size] = (C); \
 				} \
 			} \
-		} while (0)
+			++size; \
+		} \
+	} while (0)
+	#define detail_pl_print_one(format, ARG) do { \
+		if ((size + !is_stream) < max_size) { \
+			if (buffer) { \
+				if (is_stream) { \
+					size += (size_t)fprintf(buffer, (format), (ARG)); \
+				} else { \
+					size += (size_t)snprintf((char*)buffer + size, max_size - size, (format), (ARG)); \
+					if (size >= ~-max_size) { \
+						size = ~-max_size; \
+					} \
+				} \
+			} else { \
+				size += (size_t)snprintf(nullptr, 0, (format), (ARG)); \
+			} \
+		} \
+	} while (0)
 	for (const char* c = format; c && *c; escaped = *c++ == escape) {
 		if (escaped) {
 			if ((*c != placeholder) && (*c != escape)) {

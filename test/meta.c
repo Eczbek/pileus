@@ -140,17 +140,26 @@ static_assert(!pl_is_signed_int(unsigned long long));
 static_assert(pl_is_same(pl_make_unsigned_int(int), unsigned int));
 static_assert(pl_is_same(pl_make_unsigned_int(unsigned int), unsigned int));
 static_assert(pl_is_same(pl_make_unsigned_int(float), float));
+#if defined(__GNUC__) && !defined(__clang__)
+static_assert(pl_is_same(pl_make_unsigned_int(_BitInt(42)), unsigned _BitInt(42)));
+#endif
 
 static_assert(pl_is_same(pl_make_signed_int(unsigned int), int));
 static_assert(pl_is_same(pl_make_signed_int(int), int));
 static_assert(pl_is_same(pl_make_signed_int(float), float));
+#if defined(__GNUC__) && !defined(__clang__)
+static_assert(pl_is_same(pl_make_signed_int(unsigned _BitInt(42)), _BitInt(42)));
+#endif
 
-static_assert(pl_int_width(char) >= 8);
-static_assert(pl_int_width(short) >= 16);
-static_assert(pl_int_width(int) >= 16);
-static_assert(pl_int_width(long) >= 32);
-static_assert(pl_int_width(long long) >= 64);
+static_assert(pl_int_width(char) == pl_int_width(unsigned char));
+static_assert(pl_int_width(short) == pl_int_width(unsigned short));
+static_assert(pl_int_width(int) == pl_int_width(unsigned int));
+static_assert(pl_int_width(long) == pl_int_width(unsigned long));
+static_assert(pl_int_width(long long) == pl_int_width(unsigned long long));
 static_assert(pl_int_width(float) == 0);
+#if defined(__GNUC__) && !defined(__clang__)
+static_assert(pl_int_width(_BitInt(42)) == 42);
+#endif
 
 static_assert(!pl_is_float(int));
 static_assert(pl_is_float(float));

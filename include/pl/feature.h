@@ -1,6 +1,18 @@
 #ifndef PL_FEATURE_H
 #define PL_FEATURE_H
 
+#ifdef __GNUC__
+ #define pl_feature_gcc 1
+#else
+ #define pl_feature_gcc 0
+#endif
+
+#ifdef __clang__
+ #define pl_feature_clang 1
+#else
+ #define pl_feature_clang 0
+#endif
+
 #ifdef INT8_MAX
  #define pl_feature_int8 1
 #else
@@ -27,8 +39,8 @@
 
 #ifdef __SIZEOF_INT128__
  #define pl_feature_int128 1
- __extension__ typedef unsigned __int128 pl_uint128_t;
- __extension__ typedef __int128 pl_int128_t;
+__extension__ typedef unsigned __int128 pl_uint128_t;
+__extension__ typedef __int128 pl_int128_t;
 #else
  #define pl_feature_int128 0
 #endif

@@ -62,23 +62,20 @@ typedef struct {
 
 // Accepts a hexadecimal color code or a pl_term_color_t.
 // Evaluates to a pl_term_color_t.
-#define pl_term_color(...) \
-	_Generic(typeof_unqual(__VA_ARGS__), pl_term_color_t: (__VA_ARGS__), default: pl_term_color((uint_least32_t)_Generic(typeof_unqual(__VA_ARGS__), pl_term_color_t: 0, default: (__VA_ARGS__))))
+#define pl_term_color(...) _Generic(typeof_unqual(__VA_ARGS__),pl_term_color_t:(__VA_ARGS__),default:pl_term_color((uint_least32_t)_Generic(typeof_unqual(__VA_ARGS__),pl_term_color_t:0,default:(__VA_ARGS__))))
 static inline pl_term_color_t (pl_term_color)(uint_least32_t x) {
 	return (pl_term_color_t){ (x >> 16) & 0xFF, (x >> 8) & 0xFF, x & 0xFF };
 }
 
 // Accepts a hexadecimal color code or a pl_term_color_t.
 // Sets the text color.
-#define pl_term_set_fg(...) \
-	pl_term_set_fg(pl_term_color(__VA_ARGS__))
+#define pl_term_set_fg(...) pl_term_set_fg(pl_term_color(__VA_ARGS__))
 static inline void (pl_term_set_fg)(pl_term_color_t color) {
 	printf("\x1B[38;2;%i;%i;%im", color.r, color.g, color.b);
 }
 
 // Accepts a hexadecimal color code or a pl_term_color_t.
-#define pl_term_set_bg(...) \
-	pl_term_set_bg(pl_term_color(__VA_ARGS__))
+#define pl_term_set_bg(...) pl_term_set_bg(pl_term_color(__VA_ARGS__))
 static inline void (pl_term_set_bg)(pl_term_color_t color) {
 	printf("\x1B[48;2;%i;%i;%im", color.r, color.g, color.b);
 }
@@ -259,8 +256,7 @@ static inline pl_term_pos_t pl_term_pos() {
 }
 
 // Sets the cursor position.
-#define pl_term_set_pos(...) \
-	pl_ignore_unused((pl_choose(pl_is_int(__VA_ARGS__), detail_pl_term_set_pos, pl_term_set_pos)(__VA_ARGS__)))
+#define pl_term_set_pos(...) pl_ignore_unused((pl_choose(pl_is_int(__VA_ARGS__),detail_pl_term_set_pos,pl_term_set_pos)(__VA_ARGS__)))
 static inline void (pl_term_set_pos)(pl_term_pos_t pos) {
 	printf("\x1B[%zu;%zuH", -~pos.row, -~pos.col);
 }

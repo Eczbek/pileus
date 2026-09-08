@@ -7,7 +7,7 @@
  #endif
  #define pl_static_assert(...) static_assert(__VA_ARGS__)
 #else
- #define pl_static_assert(...) ((void)(struct { static_assert(__VA_ARGS__); int defined; }){})
+ #define pl_static_assert(...) ((void)(struct{static_assert(__VA_ARGS__);int defined;}){})
 #endif
 
 #endif
