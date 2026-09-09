@@ -1,12 +1,9 @@
 #ifndef PL_TERM_H
 #define PL_TERM_H
 
-#include "./meta.h"
-#include "./warn.h"
 #include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
-
 #ifdef __unix__
  #include <fcntl.h>
  #include <sys/ioctl.h>
@@ -256,12 +253,9 @@ static inline pl_term_pos_t pl_term_pos() {
 }
 
 // Sets the cursor position.
-#define pl_term_set_pos(...) pl_ignore_unused((pl_choose(pl_is_int(__VA_ARGS__),detail_pl_term_set_pos,pl_term_set_pos)(__VA_ARGS__)))
+#define pl_term_set_pos(pos, ...) pl_term_set_pos(__VA_OPT__((pl_term_pos_t){(pos),)__VA_ARGS__ __VA_OPT__(}))
 static inline void (pl_term_set_pos)(pl_term_pos_t pos) {
 	printf("\x1B[%zu;%zuH", -~pos.row, -~pos.col);
-}
-static inline void detail_pl_term_set_pos(size_t row, size_t col) {
-	(pl_term_set_pos)((pl_term_pos_t){ row, col });
 }
 
 // Evaluates to the size of the screen.
