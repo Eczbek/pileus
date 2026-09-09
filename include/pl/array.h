@@ -76,7 +76,7 @@ static inline void* (pl_array_shrink_to_fit)(void* array, size_t item_size, size
 // Accepts the identifier of an array created by pl_array(), an index in the array, and an element to insert.
 // Reallocates the array if the its size is not less than its capacity.
 // If the index is less than the array's size, moves back every element after the index and inserts the new element at the index.
-#define pl_array_insert(array, index, ...) ((void)((array)=pl_array_insert((array),sizeof*(array),alignof(typeof(*(array))),(index),&(typeof(__VA_ARGS__)){__VA_ARGS__})))
+#define pl_array_insert(array, index, ...) ((void)((array)=pl_array_insert((array),sizeof*(array),alignof(typeof(*(array))),(index),&(typeof(*(array))){__VA_ARGS__})))
 static inline void* (pl_array_insert)(void* array, size_t item_size, size_t item_align, size_t index, void* value) {
 	if ((index <= pl_array_size(array)) && (array = (pl_array_reserve)(array, item_size, item_align, 1))) {
 		for (size_t i = ++*((size_t*)array - 2); --i > index;) {
