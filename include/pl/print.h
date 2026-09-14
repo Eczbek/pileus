@@ -1,10 +1,6 @@
 #ifndef PL_PRINT_H
 #define PL_PRINT_H
 
-#ifdef __GNUC__
- #pragma GCC system_header
-#endif
-
 #include "./meta.h"
 #include "./preproc.h"
 #include "./static_assert.h"
