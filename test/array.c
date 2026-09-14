@@ -3,11 +3,11 @@
 #include <stddef.h>
 
 int main() {
-	auto array = pl_array(int);
+	auto array = pl_array(int, 0);
 
-	pl_array_push(array, 1); // [1]
-	pl_array_push(array, 2); // [1, 2]
-	pl_array_push(array, 3); // [1, 2, 3]
+	pl_array_append(array, 1); // [1]
+	pl_array_append(array, 2); // [1, 2]
+	pl_array_append(array, 3); // [1, 2, 3]
 	pl_array_insert(array, 0, 4); // [4, 1, 2, 3]
 	pl_array_erase(array, 2); // [4, 1, 3]
 

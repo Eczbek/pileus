@@ -5,11 +5,11 @@
 #include <stdlib.h>
 #include <string.h>
 
-// Accepts a type and an optional initial size for the array.
+// Accepts a type, an initial size, and an optional fill value.
 // Evaluates to a pointer to the body of the array.
 // If allocation fails, returns nullptr.
 // Must be deallocated by pl_array_free().
-#define pl_array(item_type, /*size*/...) ((typeof(item_type)*)(pl_array_resize)((typeof(item_type)*)0,sizeof(item_type),alignof(typeof(item_type)),__VA_OPT__((size))+0,&(typeof(item_type)){}))
+#define pl_array(item_type, size, /*fill_value = {}*/...) ((typeof(item_type)*)(pl_array_resize)((typeof(item_type)*)0,sizeof(item_type),alignof(typeof(item_type)),(size),(typeof(item_type)[1]){__VA_OPT__((__VA_ARGS__))}))
 
 // Accepts the identifier of an array created by pl_array().
 // Deallocates the array and assigns it to nullptr.
@@ -81,10 +81,10 @@ static inline void* (pl_array_shrink_to_fit)(void* array, size_t item_size, size
 	return array;
 }
 
-// Accepts the identifier of an array created by pl_array().
+// Accepts the identifier of an array created by pl_array(), the target size, and an optional fill value.
 // Resizes the array, filling new elements with the given value.
 // If allocation fails, the array is unchanged.
-#define pl_array_resize(array, size, /*fill_value*/...) ((void)((array) = pl_array_resize((array),sizeof*(array),alignof(typeof(*(array))),(size),(typeof(*(array))[1]){__VA_OPT__((__VA_ARGS__))})))
+#define pl_array_resize(array, size, /*fill_value = {}*/...) ((void)((array) = pl_array_resize((array),sizeof*(array),alignof(typeof(*(array))),(size),(typeof(*(array))[1]){__VA_OPT__((__VA_ARGS__))})))
 static inline void* (pl_array_resize)(void* array, size_t item_size, size_t item_align, size_t target_size, void* fill_value) {
 	if (pl_array_size(array) < target_size) {
 		array = (pl_array_reserve)(array, item_size, item_align, target_size - pl_array_size(array));
@@ -101,7 +101,7 @@ static inline void* (pl_array_resize)(void* array, size_t item_size, size_t item
 // Reallocates the array if the its size is not less than its capacity.
 // If the index is less than the array's size, moves back every element after the index and inserts the new element at the index.
 // If allocation fails, the array is unchanged.
-#define pl_array_insert(array, index, /*value*/...) ((void)((array)=pl_array_insert((array),sizeof*(array),alignof(typeof(*(array))),(index),(typeof(*(array))[1]){__VA_OPT__((__VA_ARGS__))})))
+#define pl_array_insert(array, index, /*value = {}*/...) ((void)((array)=pl_array_insert((array),sizeof*(array),alignof(typeof(*(array))),(index),(typeof(*(array))[1]){__VA_OPT__((__VA_ARGS__))})))
 static inline void* (pl_array_insert)(void* array, size_t item_size, size_t item_align, size_t index, void* value) {
 	if (index <= pl_array_size(array)) {
 		array = (pl_array_reserve)(array, item_size, item_align, 1);
@@ -118,17 +118,18 @@ static inline void* (pl_array_insert)(void* array, size_t item_size, size_t item
 // Accepts the identifier of an array created by pl_array() and an element to append to the end of the array.
 // Reallocates the array if its size is not less than its capacity.
 // If allocation fails, the array is unchanged.
-#define pl_array_push(array, /*value*/...) pl_array_insert((array),pl_array_size(array),__VA_ARGS__)
+#define pl_array_append(array, /*value = {}*/...) pl_array_insert((array),pl_array_size(array),__VA_ARGS__)
 
-// Accepts the identifier of an array created by pl_array() and a size_t expression representing an index in the array.
-// If the index is less than the array's size, removes the element at the index and moves forward every element after the index.
-#define pl_array_erase(array, index) pl_array_erase((array),sizeof*(array),(index))
-static inline void (pl_array_erase)(void* array, size_t item_size, size_t index) {
+// Accepts the identifier of an array created by pl_array(), an index in the array, and an optional number of elements to remove.
+// Removes elements starting at the index and moves forward every remaining element after the last removed element.
+#define pl_array_erase(array, index, /*count = 1*/...) pl_array_erase((array),sizeof*(array),(index),__VA_OPT__(1?(__VA_ARGS__):)1)
+static inline void (pl_array_erase)(void* array, size_t item_size, size_t index, size_t count) {
 	if (index < pl_array_size(array)) {
-		--*((size_t*)array - 2);
-		while (index++ < pl_array_size(array)) {
-			memcpy((unsigned char*)array + ~-index * item_size, (unsigned char*)array + index * item_size, item_size);
+		if ((pl_array_size(array) - index) < count) {
+			count = pl_array_size(array) - index;
 		}
+		*((size_t*)array - 2) -= count;
+		memmove((unsigned char*)array + index * item_size, (unsigned char*)array + (index + count) * item_size, count * item_size);
 	}
 }
 
