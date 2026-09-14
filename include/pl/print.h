@@ -1,6 +1,10 @@
 #ifndef PL_PRINT_H
 #define PL_PRINT_H
 
+#ifdef __GNUC__
+ #pragma GCC system_header
+#endif
+
 #include "./meta.h"
 #include "./preproc.h"
 #include "./static_assert.h"
@@ -13,23 +17,23 @@
 // Evaluates to the number of characters formatted.
 // Placeholders in the format string are represented by `%` and may be escaped with `/%`.
 // The number of placeholders must match the number of arguments passed.
-#define pl_print(format, ...) pl_print_to(stdout,(format),__VA_ARGS__)
+#define pl_print(format, /*args*/...) pl_print_to(stdout,(format),__VA_ARGS__)
 
 // Accepts a FILE* stream, a format string, and arguments to format.
 // Evaluates to the number of characters formatted.
-#define pl_print_to(stream, format, ...) detail_pl_format_to(__FILE__,__LINE__,(FILE*)(stream),1,(size_t)-1,(format),PL_EACH(detail_pl_format_assign,__VA_ARGS__)detail_pl_format_id_sentinel)
+#define pl_print_to(stream, format, /*args*/...) detail_pl_format_to(__FILE__,__LINE__,(FILE*)(stream),1,(size_t)-1,(format),PL_EACH(detail_pl_format_assign,__VA_ARGS__)detail_pl_format_id_sentinel)
 
 // Accepts a char* buffer, a format string, and arguments to format.
 // Evaluates to the number of characters formatted, including the terminator.
-#define pl_format_to(buffer, format, ...) pl_format_to_sized((buffer),(size_t)-1,(format),__VA_ARGS__)
+#define pl_format_to(buffer, format, /*args*/...) pl_format_to_sized((buffer),(size_t)-1,(format),__VA_ARGS__)
 
 // Accepts a char* buffer, a size_t expression representing the buffer's maximum size, a format string, and arguments to format.
 // Evaluates to the number of characters formatted, including the terminator.
-#define pl_format_to_sized(buffer, size, format, ...) detail_pl_format_to(__FILE__,__LINE__,(char*)(buffer),0,(size),(format),PL_EACH(detail_pl_format_assign,__VA_ARGS__)detail_pl_format_id_sentinel)
+#define pl_format_to_sized(buffer, size, format, /*args*/...) detail_pl_format_to(__FILE__,__LINE__,(char*)(buffer),0,(size),(format),PL_EACH(detail_pl_format_assign,__VA_ARGS__)detail_pl_format_id_sentinel)
 
 // Accepts a format string and arguments to format.
 // Evaluates to the number of characters formatted, including the terminator.
-#define pl_format_size(format, ...) pl_format_to(0,(format),__VA_ARGS__)
+#define pl_format_size(format, /*args*/...) pl_format_to(0,(format),__VA_ARGS__)
 
 enum {
 	detail_pl_format_id_sentinel,
@@ -87,35 +91,35 @@ static inline size_t detail_pl_format_to(const char* sloc_file, size_t sloc_line
 			case detail_pl_format_id_char:
 			case detail_pl_format_id_bool:
 				va_arg(args, int);
-				continue;
+				break;
 			case detail_pl_format_id_unsigned_int:
 				va_arg(args, unsigned int);
-				continue;
+				break;
 			case detail_pl_format_id_unsigned_long:
 				va_arg(args, unsigned long);
-				continue;
+				break;
 			case detail_pl_format_id_unsigned_long_long:
 				va_arg(args, unsigned long long);
-				continue;
+				break;
 			case detail_pl_format_id_long:
 				va_arg(args, long long);
-				continue;
+				break;
 			case detail_pl_format_id_long_long:
 				va_arg(args, unsigned long long);
-				continue;
+				break;
 			case detail_pl_format_id_float:
 			case detail_pl_format_id_double:
 				va_arg(args, double);
-				continue;
+				break;
 			case detail_pl_format_id_long_double:
 				va_arg(args, long double);
-				continue;
+				break;
 			case detail_pl_format_id_string:
 				va_arg(args, const char*);
-				continue;
+				break;
 			case detail_pl_format_id_address:
 				va_arg(args, void*);
-				continue;
+				break;
 			default:
 				unreachable();
 		}

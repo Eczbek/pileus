@@ -18,6 +18,9 @@
 #define TEST_MAX(X, ...) \
 	pl_print("max(%, %) -> %\n", #X, #__VA_ARGS__, pl_max((X), __VA_ARGS__))
 
+#define TEST_CLAMP(X, MIN, ...) \
+	pl_print("clamp(%, %, %) -> %\n", #X, #MIN, #__VA_ARGS__, pl_clamp((X), (MIN), __VA_ARGS__))
+
 int main() {
 	TEST_SIGNBIT(0);
 	TEST_SIGNBIT(1);
@@ -89,4 +92,11 @@ int main() {
 	TEST_MAX(SCHAR_MIN, LLONG_MIN);
 
 	TEST_MAX(1, -1.0);
+
+	puts("-------------");
+
+	TEST_CLAMP(0.5, 0, 1);
+	TEST_CLAMP(-0.5, 0, 1);
+	TEST_CLAMP(1.5, 0, 1);
+	TEST_CLAMP(-1, 0u, 1u);
 }

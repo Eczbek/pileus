@@ -24,7 +24,7 @@ int main() {
 		printf("%s", line1);
 		pl_term_reset_style();
 
-		char line2[] = "press any key to exit";
+		char line2[] = " press any key to exit ";
 		pl_term_set_pos(size.row / 2 + 1, -~size.col / 2 - -~sizeof(line2) / 2);
 		pl_term_set_fg(0x000000);
 		pl_term_set_bg(0xFF0000);

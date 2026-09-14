@@ -5,26 +5,11 @@
 #include <stdlib.h>
 #include <string.h>
 
-// Accepts a type and an optional initial capacity for the array.
+// Accepts a type and an optional initial size for the array.
 // Evaluates to a pointer to the body of the array.
 // If allocation fails, returns nullptr.
 // Must be deallocated by pl_array_free().
-#define pl_array(item_type, ...) ((item_type*)(pl_array)(sizeof(item_type),alignof(item_type),__VA_OPT__(1?(__VA_ARGS__):)((64/sizeof(item_type))|(64<sizeof(item_type)))))
-static inline void* (pl_array)(size_t item_size, size_t item_align, size_t capacity) {
-	if (capacity) {
-		size_t max_align = (alignof(size_t) < item_align) ? item_align : alignof(size_t);
-		size_t aligned_size = sizeof(size_t) * 2 + item_size * capacity;
-		if (size_t rem = aligned_size % max_align) {
-			aligned_size += max_align - rem;
-		}
-		if (size_t* array = aligned_alloc(max_align, aligned_size)) {
-			array[0] = 0;
-			array[1] = capacity;
-			return ((sizeof(size_t) * 2) < max_align) ? ((unsigned char*)array + max_align) : (void*)(array + 2);
-		}
-	}
-	return nullptr;
-}
+#define pl_array(item_type, /*size*/...) ((typeof(item_type)*)(pl_array_resize)((typeof(item_type)*)0,sizeof(item_type),alignof(typeof(item_type)),__VA_OPT__((size))+0,&(typeof(item_type)){}))
 
 // Accepts the identifier of an array created by pl_array().
 // Deallocates the array and assigns it to nullptr.
@@ -40,19 +25,32 @@ static inline void* (pl_array)(size_t item_size, size_t item_align, size_t capac
 
 // Accepts the identifier of an array created by pl_array() and additional size to acquire capacity for.
 // Reallocates the array such that its capacity is not less than the sum of its size and the additional size.
-#define pl_array_reserve(array, ...) ((void)((array)=pl_array_reserve((array),sizeof*(array),alignof(typeof(*(array))),__VA_ARGS__)))
+// If allocation fails, the array is unchanged.
+#define pl_array_reserve(array, additional_size) ((void)((array)=pl_array_reserve((array),sizeof*(array),alignof(typeof(*(array))),(additional_size))))
 static inline void* (pl_array_reserve)(void* array, size_t item_size, size_t item_align, size_t additional_size) {
-	if (size_t target_capacity = pl_array_size(array) + additional_size; target_capacity > pl_array_capacity(array)) {
-		size_t new_capacity = pl_array_capacity(array);
-		do {
-			new_capacity += new_capacity / 2;
-		} while (new_capacity < target_capacity);
-		if (size_t* new_array = (pl_array)(item_size, item_align, new_capacity)) {
-			memcpy(new_array, array, item_size * pl_array_size(array));
-			*(new_array - 2) = pl_array_size(array);
-			*(new_array - 1) = new_capacity;
-			pl_array_free(array);
-			return new_array;
+	if (size_t target_capacity = pl_array_size(array) + additional_size; pl_array_capacity(array) < target_capacity) {
+		size_t min_capacity = 64 / item_size;
+		size_t new_capacity = (pl_array_capacity(array) < min_capacity) ? min_capacity : pl_array_capacity(array);
+		while (new_capacity < target_capacity) {
+			if (new_capacity < 2) {
+				++new_capacity;
+			} else {
+				new_capacity += new_capacity / 2;
+			}
+		}
+		size_t max_align = (alignof(size_t) < item_align) ? item_align : alignof(size_t);
+		size_t aligned_size = 2 * sizeof(size_t) + new_capacity * item_size;
+		if (size_t rem = aligned_size % max_align) {
+			aligned_size += max_align - rem;
+		}
+		if (size_t* new_array = aligned_alloc(max_align, aligned_size)) {
+			new_array[0] = pl_array_size(array);
+			new_array[1] = new_capacity;
+			if (array) {
+				memcpy(new_array + 2, array, item_size * pl_array_size(array));
+				pl_array_free(array);
+			}
+			return ((2 * sizeof(size_t)) < max_align) ? ((unsigned char*)new_array + max_align) : (void*)(new_array + 2);
 		}
 	}
 	return array;
@@ -60,14 +58,40 @@ static inline void* (pl_array_reserve)(void* array, size_t item_size, size_t ite
 
 // Accepts the identifier of an array created by pl_array().
 // Reallocates the array such that its capacity matches its size.
+// If allocation fails, the array is unchanged.
 #define pl_array_shrink_to_fit(array) ((void)((array)=pl_array_shrink_to_fit((array),sizeof*(array),alignof(typeof(*(array))))))
 static inline void* (pl_array_shrink_to_fit)(void* array, size_t item_size, size_t item_align) {
+	if (!pl_array_size(array)) {
+		return nullptr;
+	}
 	if (pl_array_size(array) < pl_array_capacity(array)) {
-		if (size_t* new_array = (pl_array)(item_size, item_align, pl_array_size(array))) {
-			memcpy(new_array, array, item_size * pl_array_size(array));
-			*(new_array - 2) = pl_array_size(array);
+		size_t max_align = (alignof(size_t) < item_align) ? item_align : alignof(size_t);
+		size_t aligned_size = 2 * sizeof(size_t) + pl_array_size(array) * item_size;
+		if (size_t rem = aligned_size % max_align) {
+			aligned_size += max_align - rem;
+		}
+		if (size_t* new_array = aligned_alloc(max_align, aligned_size)) {
+			memcpy(new_array + 2, array, item_size * pl_array_size(array));
+			new_array[0] = pl_array_size(array);
+			new_array[1] = pl_array_size(array);
 			pl_array_free(array);
-			return new_array;
+			return ((2 * sizeof(size_t)) < max_align) ? ((unsigned char*)new_array + max_align) : (void*)(new_array + 2);
+		}
+	}
+	return array;
+}
+
+// Accepts the identifier of an array created by pl_array().
+// Resizes the array, filling new elements with the given value.
+// If allocation fails, the array is unchanged.
+#define pl_array_resize(array, size, /*fill_value*/...) ((void)((array) = pl_array_resize((array),sizeof*(array),alignof(typeof(*(array))),(size),(typeof(*(array))[1]){__VA_OPT__((__VA_ARGS__))})))
+static inline void* (pl_array_resize)(void* array, size_t item_size, size_t item_align, size_t target_size, void* fill_value) {
+	if (pl_array_size(array) < target_size) {
+		array = (pl_array_reserve)(array, item_size, item_align, target_size - pl_array_size(array));
+	}
+	if (array && (target_size <= pl_array_capacity(array))) {
+		for (size_t i = pl_array_size(array); i < target_size; ++i) {
+			memcpy((unsigned char*)array + i * item_size, fill_value, item_size);
 		}
 	}
 	return array;
@@ -76,27 +100,32 @@ static inline void* (pl_array_shrink_to_fit)(void* array, size_t item_size, size
 // Accepts the identifier of an array created by pl_array(), an index in the array, and an element to insert.
 // Reallocates the array if the its size is not less than its capacity.
 // If the index is less than the array's size, moves back every element after the index and inserts the new element at the index.
-#define pl_array_insert(array, index, ...) ((void)((array)=pl_array_insert((array),sizeof*(array),alignof(typeof(*(array))),(index),&(typeof(*(array))){__VA_ARGS__})))
+// If allocation fails, the array is unchanged.
+#define pl_array_insert(array, index, /*value*/...) ((void)((array)=pl_array_insert((array),sizeof*(array),alignof(typeof(*(array))),(index),(typeof(*(array))[1]){__VA_OPT__((__VA_ARGS__))})))
 static inline void* (pl_array_insert)(void* array, size_t item_size, size_t item_align, size_t index, void* value) {
-	if ((index <= pl_array_size(array)) && (array = (pl_array_reserve)(array, item_size, item_align, 1))) {
-		for (size_t i = ++*((size_t*)array - 2); --i > index;) {
-			memcpy((unsigned char*)array + i * item_size, (unsigned char*)array + ~-i * item_size, item_size);
+	if (index <= pl_array_size(array)) {
+		array = (pl_array_reserve)(array, item_size, item_align, 1);
+		if (pl_array_size(array) < pl_array_capacity(array)) {
+			for (size_t i = ++*((size_t*)array - 2); --i > index;) {
+				memcpy((unsigned char*)array + i * item_size, (unsigned char*)array + ~-i * item_size, item_size);
+			}
+			memcpy((unsigned char*)array + index * item_size, value, item_size);
 		}
-		memcpy((unsigned char*)array + index * item_size, value, item_size);
 	}
 	return array;
 }
 
 // Accepts the identifier of an array created by pl_array() and an element to append to the end of the array.
 // Reallocates the array if its size is not less than its capacity.
-#define pl_array_push(array, ...) pl_array_insert((array),pl_array_size(array),(__VA_ARGS__))
+// If allocation fails, the array is unchanged.
+#define pl_array_push(array, /*value*/...) pl_array_insert((array),pl_array_size(array),__VA_ARGS__)
 
 // Accepts the identifier of an array created by pl_array() and a size_t expression representing an index in the array.
 // If the index is less than the array's size, removes the element at the index and moves forward every element after the index.
-#define pl_array_erase(array, ...) pl_array_erase((array),sizeof*(array),(__VA_ARGS__))
+#define pl_array_erase(array, index) pl_array_erase((array),sizeof*(array),(index))
 static inline void (pl_array_erase)(void* array, size_t item_size, size_t index) {
 	if (index < pl_array_size(array)) {
-		*((size_t*)array - 2) -= (index < pl_array_size(array));
+		--*((size_t*)array - 2);
 		while (index++ < pl_array_size(array)) {
 			memcpy((unsigned char*)array + ~-index * item_size, (unsigned char*)array + index * item_size, item_size);
 		}
