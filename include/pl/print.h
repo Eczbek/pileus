@@ -302,6 +302,9 @@ size_t detail_pl_format_to(const char* sloc_file, size_t sloc_line, void* buffer
 			++size;
 		}
 	}
+	if (!is_stream) {
+		((char*)buffer)[size] = '\0';
+	}
 	va_end(args);
 	return size;
 }
