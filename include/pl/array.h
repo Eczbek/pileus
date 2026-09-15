@@ -9,7 +9,7 @@
 // Evaluates to a pointer to the body of the array.
 // If allocation fails, returns nullptr.
 // Must be deallocated by pl_array_free().
-#define pl_array(item_type, size, /*fill_value = {}*/...) ((typeof(item_type)*)(pl_array_resize)((typeof(item_type)*)0,sizeof(item_type),alignof(typeof(item_type)),(size),(typeof(item_type)[1]){__VA_OPT__((__VA_ARGS__))}))
+#define pl_array(item_type, size, /*fill_value = {}*/...) ((typeof(item_type)*)(pl_array_resize)((typeof(item_type)*)0,sizeof(item_type),alignof(typeof(item_type)),(size),(typeof(item_type)[1]){__VA_ARGS__}))
 
 // Accepts the identifier of an array created by pl_array().
 // Deallocates the array and assigns it to nullptr.
@@ -84,7 +84,7 @@ static inline void* (pl_array_shrink_to_fit)(void* array, size_t item_size, size
 // Accepts the identifier of an array created by pl_array(), the target size, and an optional fill value.
 // Resizes the array, filling new elements with the given value.
 // If allocation fails, the array is unchanged.
-#define pl_array_resize(array, size, /*fill_value = {}*/...) ((void)((array) = pl_array_resize((array),sizeof*(array),alignof(typeof(*(array))),(size),(typeof(*(array))[1]){__VA_OPT__((__VA_ARGS__))})))
+#define pl_array_resize(array, size, /*fill_value = {}*/...) ((void)((array) = pl_array_resize((array),sizeof*(array),alignof(typeof(*(array))),(size),(typeof(*(array))[1]){__VA_ARGS__})))
 static inline void* (pl_array_resize)(void* array, size_t item_size, size_t item_align, size_t target_size, void* fill_value) {
 	if (pl_array_size(array) < target_size) {
 		array = (pl_array_reserve)(array, item_size, item_align, target_size - pl_array_size(array));
@@ -101,7 +101,7 @@ static inline void* (pl_array_resize)(void* array, size_t item_size, size_t item
 // Reallocates the array if the its size is not less than its capacity.
 // If the index is less than the array's size, moves back every element after the index and inserts the new element at the index.
 // If allocation fails, the array is unchanged.
-#define pl_array_insert(array, index, /*value = {}*/...) ((void)((array)=pl_array_insert((array),sizeof*(array),alignof(typeof(*(array))),(index),(typeof(*(array))[1]){__VA_OPT__((__VA_ARGS__))})))
+#define pl_array_insert(array, index, /*value = {}*/...) ((void)((array)=pl_array_insert((array),sizeof*(array),alignof(typeof(*(array))),(index),(typeof(*(array))[1]){__VA_ARGS__})))
 static inline void* (pl_array_insert)(void* array, size_t item_size, size_t item_align, size_t index, void* value) {
 	if (index <= pl_array_size(array)) {
 		array = (pl_array_reserve)(array, item_size, item_align, 1);

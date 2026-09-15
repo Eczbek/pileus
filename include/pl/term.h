@@ -254,7 +254,7 @@ static inline pl_term_pos_t pl_term_pos() {
 
 // Accepts two size_t or a pl_term_pos_t.
 // Sets the cursor position.
-#define pl_term_set_pos(pos, ...) pl_term_set_pos(__VA_OPT__((pl_term_pos_t){)(pos)__VA_OPT__(,__VA_ARGS__}))
+#define pl_term_set_pos(pos, ...) pl_term_set_pos(__VA_OPT__((pl_term_pos_t){)pos __VA_OPT__(,__VA_ARGS__}))
 static inline void (pl_term_set_pos)(pl_term_pos_t pos) {
 	printf("\x1B[%zu;%zuH", -~pos.row, -~pos.col);
 }
