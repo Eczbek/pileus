@@ -178,7 +178,7 @@ bool detail_pl_format_check(const char* sloc_file, size_t sloc_line, const char*
 #endif
 
 size_t detail_pl_format_impl(void* buffer, bool is_stream, size_t* size, size_t max_size, const char* format, size_t i, va_list args) {
-	char spec[256];
+	char spec[256] = {};
 	size_t spec_size = 0;
 	for (; format[i]; ++i) {
 		if (format[i] == '}') {
