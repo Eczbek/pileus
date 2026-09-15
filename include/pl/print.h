@@ -57,6 +57,7 @@ enum {
 
 #define detail_pl_format_assign(...) (pl_static_assert(detail_pl_format_id(__VA_ARGS__)!=detail_pl_format_id_unknown,"unformattable argument: "#__VA_ARGS__),detail_pl_format_id(__VA_ARGS__)),(__VA_ARGS__),
 
+#ifndef NDEBUG
 size_t detail_pl_format_check_impl(const char* sloc_file, size_t sloc_line, const char* format, size_t i, va_list args) {
 	for (;; ++i) {
 		if (!format[i]) {
@@ -174,8 +175,11 @@ bool detail_pl_format_check(const char* sloc_file, size_t sloc_line, const char*
 	fprintf(stderr, "\"\n");
 	return false;
 }
+#endif
 
 size_t detail_pl_format_impl(void* buffer, bool is_stream, size_t* size, size_t max_size, const char* format, size_t i, va_list args) {
+	char spec[256];
+	size_t spec_size = 0;
 	for (; format[i]; ++i) {
 		if (format[i] == '}') {
 			size_t count = 1;
@@ -188,71 +192,73 @@ size_t detail_pl_format_impl(void* buffer, bool is_stream, size_t* size, size_t 
 			++i;
 		} else if (format[i] == '{') {
 			if (format[i + 1] != '{') {
-				i = detail_pl_format_impl(nullptr, false, size, (size_t)-1, format, i + 1, args);
+				i = detail_pl_format_impl(spec, false, &spec_size, sizeof(spec), format, i + 1, args);
 				continue;
 			}
 			++i;
 		}
+		spec[spec_size++] = format[i];
 	}
-	#define detail_pl_format_arg(FORMAT, ARG) do { \
+	int pad = (int)strtoll(spec, nullptr, 0);
+	#define detail_pl_format_arg(SPEC, ARG) do { \
 		if ((*size + !is_stream) < max_size) { \
 			if (buffer) { \
 				if (is_stream) { \
-					*size += (size_t)fprintf(buffer, (FORMAT), (ARG)); \
+					*size += (size_t)fprintf(buffer, (SPEC), pad, (ARG)); \
 				} else { \
-					*size += (size_t)snprintf((char*)buffer + *size, max_size - *size, (FORMAT), (ARG)); \
+					*size += (size_t)snprintf((char*)buffer + *size, max_size - *size, (SPEC), pad, (ARG)); \
 					if (i >= ~-max_size) { \
 						*size = ~-max_size; \
 					} \
 				} \
 			} else { \
-				*size += (size_t)snprintf(nullptr, 0, (FORMAT), (ARG)); \
+				*size += (size_t)snprintf(nullptr, 0, (SPEC), pad, (ARG)); \
 			} \
 		} \
 	} while (0)
 	switch (va_arg(args, int)) {
 		case detail_pl_format_id_unsigned_char:
 		case detail_pl_format_id_unsigned_short:
-			detail_pl_format_arg("%u", (unsigned int)va_arg(args, int));
+			detail_pl_format_arg("%*u", (unsigned int)va_arg(args, int));
 			break;
 		case detail_pl_format_id_unsigned_int:
-			detail_pl_format_arg("%u", va_arg(args, unsigned int));
+			detail_pl_format_arg("%*u", va_arg(args, unsigned int));
 			break;
 		case detail_pl_format_id_unsigned_long:
-			detail_pl_format_arg("%lu", va_arg(args, unsigned long));
+			detail_pl_format_arg("%*lu", va_arg(args, unsigned long));
 			break;
 		case detail_pl_format_id_unsigned_long_long:
-			detail_pl_format_arg("%llu", va_arg(args, unsigned long long));
+			detail_pl_format_arg("%*llu", va_arg(args, unsigned long long));
 			break;
 		case detail_pl_format_id_signed_char:
 		case detail_pl_format_id_short:
 		case detail_pl_format_id_int:
-			detail_pl_format_arg("%i", va_arg(args, int));
+			detail_pl_format_arg("%*i", va_arg(args, int));
 			break;
 		case detail_pl_format_id_long:
-			detail_pl_format_arg("%li", va_arg(args, long));
+			detail_pl_format_arg("%*li", va_arg(args, long));
 			break;
 		case detail_pl_format_id_long_long:
-			detail_pl_format_arg("%lli", va_arg(args, long long));
+			detail_pl_format_arg("%*lli", va_arg(args, long long));
 			break;
 		case detail_pl_format_id_float:
 		case detail_pl_format_id_double:
-			detail_pl_format_arg("%f", va_arg(args, double));
+			detail_pl_format_arg("%*f", va_arg(args, double));
 			break;
 		case detail_pl_format_id_long_double:
-			detail_pl_format_arg("%Lf", va_arg(args, long double));
+			detail_pl_format_arg("%*Lf", va_arg(args, long double));
 			break;
 		case detail_pl_format_id_char:
-			detail_pl_format_arg("%c", va_arg(args, int));
+			detail_pl_format_arg("%*c", va_arg(args, int));
 			break;
 		case detail_pl_format_id_bool:
-			detail_pl_format_arg("%s", va_arg(args, int) ? "true" : "false");
+			detail_pl_format_arg("%*s", va_arg(args, int) ? "true" : "false");
 			break;
 		case detail_pl_format_id_string:
-			detail_pl_format_arg("%s", va_arg(args, const char*));
+			detail_pl_format_arg("%*s", va_arg(args, const char*));
 			break;
 		case detail_pl_format_id_address:
-			detail_pl_format_arg("%p", va_arg(args, const void*));
+			detail_pl_format_arg("%*p", va_arg(args, const void*));
 			break;
 		default:
 			unreachable();
@@ -262,11 +268,13 @@ size_t detail_pl_format_impl(void* buffer, bool is_stream, size_t* size, size_t 
 
 size_t detail_pl_format_to(const char* sloc_file, size_t sloc_line, void* buffer, bool is_stream, size_t max_size, const char* format, ...) {
 	va_list args;
+#ifndef NDEBUG
 	va_start(args, format);
 	if (!detail_pl_format_check(sloc_file, sloc_line, format, args)) {
 		abort();
 	}
 	va_end(args);
+#endif
 	va_start(args, format);
 	size_t size = 0;
 	for (size_t i = 0; format[i]; ++i) {
