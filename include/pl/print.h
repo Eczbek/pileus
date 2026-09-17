@@ -25,7 +25,7 @@
 
 // Accepts a char* buffer, a size_t expression representing the buffer's maximum size, a format string, and arguments to format.
 // Evaluates to the number of characters formatted, including the terminator.
-#define pl_format_to_sized(buffer, size, format, /*args*/...) detail_pl_format_to(__FILE__,__LINE__,(char*)(buffer),0,(size),(format),PL_EACH(detail_pl_format_assign,__VA_ARGS__)detail_pl_format_id_sentinel)
+#define pl_format_to_sized(buffer, max_size, format, /*args*/...) detail_pl_format_to(__FILE__,__LINE__,(char*)(buffer),0,(max_size),(format),PL_EACH(detail_pl_format_assign,__VA_ARGS__)detail_pl_format_id_sentinel)
 
 // Accepts a format string and arguments to format.
 // Evaluates to the number of characters formatted, including the terminator.
@@ -205,17 +205,19 @@ size_t detail_pl_format_impl(void* buffer, bool is_stream, size_t* size, size_t 
 			if (buffer) { \
 				if (is_stream) { \
 					*size += (size_t)fprintf(buffer, (SPEC), pad, (ARG)); \
-				} else { \
+				} else if (~max_size) { \
 					*size += (size_t)snprintf((char*)buffer + *size, max_size - *size, (SPEC), pad, (ARG)); \
 					if (i >= ~-max_size) { \
 						*size = ~-max_size; \
 					} \
+				} else { \
+					*size += (size_t)sprintf((char*)buffer + *size, (SPEC), pad, (ARG)); \
 				} \
 			} else { \
 				*size += (size_t)snprintf(nullptr, 0, (SPEC), pad, (ARG)); \
 			} \
 		} \
-	} while (0)
+	} while (false)
 	switch (va_arg(args, int)) {
 		case detail_pl_format_id_unsigned_char:
 		case detail_pl_format_id_unsigned_short:

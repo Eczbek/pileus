@@ -1,25 +1,25 @@
-#include "../include/pl/math.h"
-#include "../include/pl/print.h"
+#include <pl/math.h>
+#include <pl/print.h>
 #include <limits.h>
 #include <stdio.h>
 
-#define TEST_SIGNBIT(...) \
-	pl_print("signbit(%) -> %\n", #__VA_ARGS__, pl_signbit(__VA_ARGS__))
+#define TEST_SIGNBIT(/*VALUE*/...) \
+	{ auto x = pl_signbit(__VA_ARGS__); pl_print("signbit({}) -> {}\n", #__VA_ARGS__, x); }
 
-#define TEST_ABS(...) \
-	pl_print("abs(%) -> %\n", #__VA_ARGS__, pl_abs(__VA_ARGS__))
+#define TEST_ABS(/*VALUE*/...) \
+	{ auto x = pl_abs(__VA_ARGS__); pl_print("abs({}) -> {}\n", #__VA_ARGS__, x); }
 
-#define TEST_COMPARE(X, ...) \
-	pl_print("% % %\n", #X, "<=>"[pl_compare((X), __VA_ARGS__) + 1], #__VA_ARGS__)
+#define TEST_COMPARE(LHS, /*RHS*/...) \
+	{ auto x = pl_compare((LHS), __VA_ARGS__); pl_print("{} {} {}\n", #LHS, "<=>"[x + 1], #__VA_ARGS__); }
 
-#define TEST_MIN(X, ...) \
-	pl_print("min(%, %) -> %\n", #X, #__VA_ARGS__, pl_min((X), __VA_ARGS__))
+#define TEST_MIN(LHS, /*RHS*/...) \
+	{ auto x = pl_min((LHS), __VA_ARGS__); pl_print("min({}, {}) -> {}\n", #LHS, #__VA_ARGS__, x); }
 
-#define TEST_MAX(X, ...) \
-	pl_print("max(%, %) -> %\n", #X, #__VA_ARGS__, pl_max((X), __VA_ARGS__))
+#define TEST_MAX(LHS, /*RHS*/...) \
+	{ auto x = pl_max((LHS), __VA_ARGS__); pl_print("max({}, {}) -> {}\n", #LHS, #__VA_ARGS__, x); }
 
-#define TEST_CLAMP(X, MIN, ...) \
-	pl_print("clamp(%, %, %) -> %\n", #X, #MIN, #__VA_ARGS__, pl_clamp((X), (MIN), __VA_ARGS__))
+#define TEST_CLAMP(VALUE, MIN, /*MAX*/...) \
+	{ auto x = pl_clamp((VALUE), (MIN), __VA_ARGS__); pl_print("clamp({}, {}, {}) -> {}\n", #VALUE, #MIN, #__VA_ARGS__, x); }
 
 int main() {
 	TEST_SIGNBIT(0);

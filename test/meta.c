@@ -1,4 +1,4 @@
-#include "../include/pl/meta.h"
+#include <pl/meta.h>
 
 int main() {}
 
