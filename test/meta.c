@@ -125,6 +125,7 @@ static_assert(!pl_is_unsigned_int(short));
 static_assert(!pl_is_unsigned_int(int));
 static_assert(!pl_is_unsigned_int(long));
 static_assert(!pl_is_unsigned_int(long long));
+static_assert(!pl_is_unsigned_int(struct{ int _; }));
 
 static_assert(pl_is_signed_int(signed char));
 static_assert(pl_is_signed_int(short));
@@ -138,6 +139,7 @@ static_assert(!pl_is_signed_int(unsigned int));
 static_assert(!pl_is_signed_int(unsigned long));
 static_assert(!pl_is_signed_int(unsigned long long));
 static_assert(!pl_is_signed_int(bool));
+static_assert(!pl_is_signed_int(struct{ int _; }));
 
 static_assert(pl_is_same(pl_make_unsigned_int(int), unsigned int));
 static_assert(pl_is_same(pl_make_unsigned_int(unsigned int), unsigned int));
@@ -163,6 +165,7 @@ static_assert(pl_int_width(float) == 0);
 #if defined(__GNUC__) && !defined(__clang__)
 static_assert(pl_int_width(_BitInt(42)) == 42);
 #endif
+static_assert(pl_int_width(struct{ int _; }) == 0);
 
 static_assert(!pl_is_float(int));
 static_assert(pl_is_float(float));
