@@ -11,10 +11,10 @@
 #include <wchar.h>
 
 // Evaluates to whether the arguments' types are compatible.
-#define pl_is_same(lhs, /*rhs*/...) _Generic((typeof(lhs)*)0,typeof(__VA_ARGS__)*:1,default:0)
+#define pl_is_same(lhs, /*rhs*/...) _Generic(typeof(lhs),typeof(__VA_ARGS__):1,default:0)
 
 // Evaluates to whether the arguments' types are compatible, ignoring qualifiers.
-#define pl_is_same_unqual(lhs, /*rhs*/...) _Generic((typeof_unqual(lhs)*)0,typeof_unqual(__VA_ARGS__)*:1,default:0)
+#define pl_is_same_unqual(lhs, /*rhs*/...) _Generic(typeof_unqual(lhs),typeof_unqual(__VA_ARGS__):1,default:0)
 
 // Accepts a condition expression and two other expressions.
 // The condition must be constant and integer-like.
@@ -38,7 +38,11 @@
 
 #ifdef __GNUC__
  // Evaluates to whether the argument's type is a pointer type.
- #define pl_is_pointer(/*type*/...) (!pl_is_array(__VA_ARGS__)&&!pl_is_function(__VA_ARGS__)&&__builtin_classify_type(pl_fake(__VA_ARGS__))==5)
+ #ifndef __clang__
+  #define pl_is_pointer(/*type*/...) (__builtin_classify_type(typeof(__VA_ARGS__))==5)
+ #else
+  #define pl_is_pointer(/*type*/...) (__builtin_classify_type(pl_fake(__VA_ARGS__))==5&&!pl_is_function_or_array(__VA_ARGS__))
+ #endif
 #endif
 
 // Evaluates to whether the argument's type is a function type.
@@ -58,7 +62,7 @@
 
 // Evaluates to whether the argument's type is a function or array type.
 #if defined(__GNUC__) && !defined(__clang__)
- #define pl_is_function_or_array(/*type*/...) (1&34816>>(1+__builtin_classify_type(typeof(__VA_ARGS__))))
+ #define pl_is_function_or_array(/*type*/...) (1&34816ul>>(1+__builtin_classify_type(typeof(__VA_ARGS__))))
 #else
  #define pl_is_function_or_array(/*type*/...) _Generic(pl_fake(__VA_ARGS__),typeof(__VA_ARGS__)*:1,default:!pl_is_decayed(__VA_ARGS__))
 #endif
@@ -67,21 +71,21 @@
 #define pl_is_sized_array(/*type*/...) _Generic(pl_fake(__VA_ARGS__),typeof(__VA_ARGS__)*:0,default:_Generic(typeof_unqual(__VA_ARGS__),typeof_unqual(pl_decay(__VA_ARGS__)):0,default:!pl_is_unsized_array(__VA_ARGS__)))
 
 // Evaluates to whether the argument's type is an unsized array type.
-#define pl_is_unsized_array(/*type*/...) _Generic(typeof(__VA_ARGS__),typeof(*_Generic(typeof_unqual(__VA_ARGS__),typeof_unqual(pl_decay(__VA_ARGS__)):(int*)0,default:_Generic(pl_fake(__VA_ARGS__),typeof(__VA_ARGS__)*:(int*)0,default:pl_fake(__VA_ARGS__))))[1]:_Generic(typeof(__VA_ARGS__),typeof(*_Generic(typeof_unqual(__VA_ARGS__),typeof_unqual(pl_decay(__VA_ARGS__)):(int*)0,default:_Generic(pl_fake(__VA_ARGS__),typeof(__VA_ARGS__)*:(int*)0,default:pl_fake(__VA_ARGS__))))[2]:1,default:0),default:0)
+#define pl_is_unsized_array(/*type*/...) _Generic(typeof(__VA_ARGS__),typeof(*pl_choose(pl_is_array(__VA_ARGS__),pl_fake(__VA_ARGS__),""))[1]:_Generic(typeof(__VA_ARGS__),typeof(*pl_choose(pl_is_array(__VA_ARGS__),pl_fake(__VA_ARGS__),""))[2]:1,default:0),default:0)
 
 // If the argument's type is a sized array type, evaluates to the array's size.
 // Otherwise, evaluates to zero.
-#define pl_array_extent(/*type*/...) (sizeof pl_choose(pl_is_sized_array(__VA_ARGS__),pl_fake(__VA_ARGS__),0)/sizeof*pl_fake(pl_choose_type(pl_is_sized_array(__VA_ARGS__),typeof(__VA_ARGS__),int(*)[2])))
+#define pl_array_extent(/*type*/...) (sizeof pl_choose(pl_is_sized_array(__VA_ARGS__),pl_fake(__VA_ARGS__),"")/sizeof*pl_fake(pl_choose_type(pl_is_sized_array(__VA_ARGS__),typeof(__VA_ARGS__),&"")))
 
 #ifdef __GNUC__
  // If the argument's type is a pointer type, evaluates to the pointee type.
  // Otherwise, evaluates to the original type.
- #define pl_drop_pointer(/*type*/...) pl_choose_type(pl_is_pointer(__VA_ARGS__),*pl_fake(pl_choose_type(pl_is_pointer(__VA_ARGS__),typeof(__VA_ARGS__),int*)),__VA_ARGS__)
+ #define pl_drop_pointer(/*type*/...) pl_choose_type(pl_is_pointer(__VA_ARGS__),*pl_fake(pl_choose_type(pl_is_pointer(__VA_ARGS__),typeof(__VA_ARGS__),"")),__VA_ARGS__)
 #endif
 
 // If the argument's type is an array type, evaluates to the array's value type.
 // Otherwise, evaluates to the original type.
-#define pl_drop_extent(/*type*/...) pl_choose_type(pl_is_array(__VA_ARGS__),*pl_fake(pl_choose_type(pl_is_array(__VA_ARGS__),typeof(__VA_ARGS__),int*)),__VA_ARGS__)
+#define pl_drop_extent(/*type*/...) pl_choose_type(pl_is_array(__VA_ARGS__),*pl_fake(pl_choose_type(pl_is_array(__VA_ARGS__),typeof(__VA_ARGS__),"")),__VA_ARGS__)
 
 // Evaluates to the argument's type, decayed.
 // Integer-like types are not promoted.
@@ -96,7 +100,7 @@
 // Evaluates to whether the argument's type is an integer type.
 #ifdef __GNUC__
  // Detects _BitInt and extended integer types.
- #define pl_is_int(/*type*/...) (1&524324>>(1+__builtin_classify_type(pl_fake(__VA_ARGS__))))
+ #define pl_is_int(/*type*/...) (1&524324ul>>(1+__builtin_classify_type(pl_fake(__VA_ARGS__))))
 #else
  #define pl_is_int(/*type*/...) (!!pl_int_width(__VA_ARGS__))
 #endif
@@ -131,7 +135,7 @@
 // Evaluates to whether the argument's type is a floating-point type.
 #ifdef __GNUC__
  // Supports extended floating-point types.
- #define pl_is_float(/*type*/...) (!pl_is_decimal_float(__VA_ARGS__)&&__builtin_classify_type(pl_fake(__VA_ARGS__))==8)
+ #define pl_is_float(/*type*/...) (__builtin_classify_type(pl_fake(__VA_ARGS__))==8&&!pl_is_decimal_float(__VA_ARGS__))
 #else
  #define pl_is_float(/*type*/...) _Generic(typeof_unqual(__VA_ARGS__),float:1,double:1,long double:1,default:0)
 #endif

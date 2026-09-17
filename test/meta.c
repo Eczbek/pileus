@@ -113,6 +113,7 @@ static_assert(!pl_is_int(int()));
 #ifdef __GNUC__
 __extension__ static_assert(pl_is_int(__int128));
 #endif
+static_assert(!pl_is_int(struct{ int _; }));
 
 static_assert(pl_is_unsigned_int(unsigned char));
 static_assert(pl_is_unsigned_int(unsigned short));
