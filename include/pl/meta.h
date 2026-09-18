@@ -89,7 +89,7 @@
 
 // Evaluates to the argument's type, decayed.
 // Integer-like types are not promoted.
-#define pl_decay(/*type*/...) pl_choose_type(pl_int_width(__VA_ARGS__)-1<INT_WIDTH-1,typeof(__VA_ARGS__),0?pl_fake(__VA_ARGS__):pl_fake(__VA_ARGS__))
+#define pl_decay(/*type*/...) pl_choose_type(pl_is_int(__VA_ARGS__),typeof(__VA_ARGS__),0?pl_fake(__VA_ARGS__):pl_fake(__VA_ARGS__))
 
 // Evaluates to whether the argument's type is decayed.
 #define pl_is_decayed(/*type*/...) _Generic(typeof_unqual(__VA_ARGS__),pl_decay(__VA_ARGS__):1,default:0)
