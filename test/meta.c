@@ -71,10 +71,11 @@ static_assert(!pl_is_unsized_array(int[1]));
 static_assert(pl_is_unsized_array(int[]));
 static_assert(!pl_is_unsized_array(int()));
 
-static_assert(pl_array_extent(int[1]) == 1);
-static_assert(pl_array_extent(int[2]) == 2);
-static_assert(pl_array_extent(int[3]) == 3);
-static_assert(pl_array_extent(int[]) == 0);
+static_assert(pl_extent(int[1]) == 1);
+static_assert(pl_extent(int[2]) == 2);
+static_assert(pl_extent(int[3]) == 3);
+static_assert(pl_extent(int[]) == 0);
+static_assert(pl_extent(int) == 0);
 
 static_assert(pl_is_same(pl_drop_pointer(int), int));
 static_assert(pl_is_same(pl_drop_pointer(int*), int));

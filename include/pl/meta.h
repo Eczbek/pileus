@@ -75,7 +75,7 @@
 
 // If the argument's type is a sized array type, evaluates to the array's size.
 // Otherwise, evaluates to zero.
-#define pl_array_extent(/*type*/...) (sizeof pl_choose(pl_is_sized_array(__VA_ARGS__),pl_fake(__VA_ARGS__),"")/sizeof*pl_fake(pl_choose_type(pl_is_sized_array(__VA_ARGS__),typeof(__VA_ARGS__),&"")))
+#define pl_extent(/*type*/...) (sizeof pl_choose(pl_is_sized_array(__VA_ARGS__),pl_fake(__VA_ARGS__),"")/sizeof*pl_choose(pl_is_sized_array(__VA_ARGS__),pl_fake(__VA_ARGS__),&""))
 
 #ifdef __GNUC__
  // If the argument's type is a pointer type, evaluates to the pointee type.
