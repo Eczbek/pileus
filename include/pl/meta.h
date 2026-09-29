@@ -54,10 +54,16 @@
 #endif
 
 // Evaluates to whether the argument's type is an array type.
-#if defined(__GNUC__) && !defined(__clang__)
- #define pl_is_array(/*type*/...) (__builtin_classify_type(typeof(__VA_ARGS__))==14)
+#ifndef __clang__
+ #ifdef __GNUC__
+  #define pl_is_array(/*type*/...) (__builtin_classify_type(typeof(__VA_ARGS__))==14)
+ #else
+  #define pl_is_array(/*type*/...) _Generic(pl_fake(__VA_ARGS__),typeof(__VA_ARGS__)*:0,default:_Generic(0?(constexpr typeof(_Generic(typeof(__VA_ARGS__),typeof(0?pl_fake(__VA_ARGS__):pl_fake(__VA_ARGS__)):(void*)0,default:0?pl_fake(__VA_ARGS__):pl_fake(__VA_ARGS__)))){}:(void*)0,void*:0,default:1))
+ #endif
 #else
- #define pl_is_array(/*type*/...) _Generic(pl_fake(__VA_ARGS__),typeof(__VA_ARGS__)*:0,default:!pl_is_decayed(__VA_ARGS__))
+ // Clang does not implement compound literal constants yet, but it is more permissive.
+ #pragma clang diagnostic ignored "-Wconditional-type-mismatch"
+ #define pl_is_array(/*type*/...) _Generic(pl_fake(__VA_ARGS__),typeof(__VA_ARGS__)*:0,default:_Generic(0?(typeof(_Generic(typeof(__VA_ARGS__),typeof(0?pl_fake(__VA_ARGS__):pl_fake(__VA_ARGS__)):(void*)0,default:0?pl_fake(__VA_ARGS__):pl_fake(__VA_ARGS__)))){}:(void*)0,void*:0,default:1))
 #endif
 
 // Evaluates to whether the argument's type is a function or array type.
@@ -89,7 +95,13 @@
 
 // Evaluates to the argument's type, decayed.
 // Integer-like types are not promoted.
-#define pl_decay(/*type*/...) pl_choose_type(pl_is_int(__VA_ARGS__),typeof(__VA_ARGS__),0?pl_fake(__VA_ARGS__):pl_fake(__VA_ARGS__))
+#ifndef __clang__
+ #define pl_decay(/*type*/...) typeof(_Generic(0?(constexpr typeof(0?pl_fake(__VA_ARGS__):pl_fake(__VA_ARGS__))){}:(void*)0,void*:pl_fake(__VA_ARGS__),default:0?pl_fake(__VA_ARGS__):pl_fake(__VA_ARGS__)))
+#else
+ // Clang does not implement compound literal constants yet, but it is more permissive.
+ #pragma clang diagnostic ignored "-Wconditional-type-mismatch"
+ #define pl_decay(/*type*/...) typeof(_Generic(0?(typeof(0?pl_fake(__VA_ARGS__):pl_fake(__VA_ARGS__))){}:(void*)0,void*:pl_fake(__VA_ARGS__),default:0?pl_fake(__VA_ARGS__):pl_fake(__VA_ARGS__)))
+#endif
 
 // Evaluates to whether the argument's type is decayed.
 #define pl_is_decayed(/*type*/...) _Generic(typeof_unqual(__VA_ARGS__),pl_decay(__VA_ARGS__):1,default:0)
