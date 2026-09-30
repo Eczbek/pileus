@@ -54,25 +54,17 @@
 #endif
 
 // Evaluates to whether the argument's type is an array type.
-#ifndef __clang__
- #ifdef __GNUC__
-  #define pl_is_array(/*type*/...) (14==__builtin_classify_type(typeof(__VA_ARGS__)))
- #else
-  #define pl_is_array(/*type*/...) _Generic(0?(void*)0:(constexpr typeof(_Generic(0?pl_fake(__VA_ARGS__):pl_fake(__VA_ARGS__),typeof(__VA_ARGS__)*:0,typeof_unqual(__VA_ARGS__):0,default:0?pl_fake(__VA_ARGS__):pl_fake(__VA_ARGS__)))){},void*:0,default:1)
- #endif
+#if defined(__GNUC__) && !defined(__clang__)
+ #define pl_is_array(/*type*/...) (14==__builtin_classify_type(typeof(__VA_ARGS__)))
 #else
- #define pl_is_array(/*type*/...) _Generic(0?(void*)0:_Generic(typeof(0?pl_fake(__VA_ARGS__):pl_fake(__VA_ARGS__)),typeof(__VA_ARGS__)*:0,typeof_unqual(__VA_ARGS__):0,default:0?pl_fake(__VA_ARGS__):pl_fake(__VA_ARGS__)),void*:0,default:1)
+ #define pl_is_array(/*type*/...) _Generic(int(typeof_unqual(_Generic(pl_fake_unqual(__VA_ARGS__),typeof_unqual(__VA_ARGS__)*:0,void:0,default:pl_fake(__VA_ARGS__)))),int(typeof_unqual(_Generic(pl_fake_unqual(__VA_ARGS__),typeof_unqual(__VA_ARGS__)*:0,void:0,default:pl_fake(__VA_ARGS__)))const):0,default:1)
 #endif
 
 // Evaluates to whether the argument's type is a function or array type.
-#ifndef __clang__
- #ifdef __GNUC__
-  #define pl_is_function_or_array(/*type*/...) (1&34816l>>(1+__builtin_classify_type(typeof(__VA_ARGS__))))
- #else
-  #define pl_is_function_or_array(/*type*/...) _Generic(0?(void*)0:(constexpr typeof(_Generic(0?pl_fake(__VA_ARGS__):pl_fake(__VA_ARGS__),typeof_unqual(__VA_ARGS__):0,default:0?pl_fake(__VA_ARGS__):pl_fake(__VA_ARGS__)))){},void*:0,default:1)
- #endif
+#if defined(__GNUC__) && !defined(__clang__)
+ #define pl_is_function_or_array(/*type*/...) (1&34816l>>(1+__builtin_classify_type(typeof(__VA_ARGS__))))
 #else
- #define pl_is_function_or_array(/*type*/...) _Generic(0?(void*)0:_Generic(typeof(0?pl_fake(__VA_ARGS__):pl_fake(__VA_ARGS__)),typeof_unqual(__VA_ARGS__):0,default:0?pl_fake(__VA_ARGS__):pl_fake(__VA_ARGS__)),void*:0,default:1)
+ #define pl_is_function_or_array(/*type*/...) _Generic(int(typeof_unqual(_Generic(pl_fake_unqual(__VA_ARGS__),void:0,default:pl_fake(__VA_ARGS__)))),int(typeof_unqual(_Generic(pl_fake_unqual(__VA_ARGS__),typeof_unqual(__VA_ARGS__)*:0,void:0,default:pl_fake(__VA_ARGS__)))const):0,default:1)
 #endif
 
 // Evaluates to whether the argument's type is a sized array type.
@@ -95,16 +87,16 @@
 // Otherwise, evaluates to the original type.
 #define pl_drop_extent(/*type*/...) pl_choose_type(pl_is_array(__VA_ARGS__),*pl_fake(pl_choose_type(pl_is_array(__VA_ARGS__),typeof(__VA_ARGS__),"")),__VA_ARGS__)
 
-// Evaluates to the argument's type, decayed.
-// Integer-like types are not promoted.
+// Evaluates to the argument's type decayed to a pointer if it is an array or function type.
+// The argument's type must not be an incomplete struct.
 #ifndef __clang__
- #define pl_decay(/*type*/...) typeof(_Generic(0?(void*)0:(constexpr typeof(_Generic(0?pl_fake(__VA_ARGS__):pl_fake(__VA_ARGS__),typeof_unqual(__VA_ARGS__):0,default:0?pl_fake(__VA_ARGS__):pl_fake(__VA_ARGS__)))){},void*:pl_fake(__VA_ARGS__),default:0?pl_fake(__VA_ARGS__):pl_fake(__VA_ARGS__)))
+ #define pl_decay(/*type*/...) typeof(_Generic(0?(void*)0:(typeof(_Generic(0?pl_fake(__VA_ARGS__):pl_fake(__VA_ARGS__),typeof_unqual(__VA_ARGS__):0,default:0?pl_fake(__VA_ARGS__):pl_fake(__VA_ARGS__))))0,void*:pl_fake(__VA_ARGS__),default:0?pl_fake(__VA_ARGS__):pl_fake(__VA_ARGS__)))
 #else
- #pragma clang diagnostic ignored "-Wconditional-type-mismatch"
- #define pl_decay(/*type*/...) typeof(_Generic(0?(void*)0:_Generic(typeof(0?pl_fake(__VA_ARGS__):pl_fake(__VA_ARGS__)),typeof_unqual(__VA_ARGS__):0,default:0?pl_fake(__VA_ARGS__):pl_fake(__VA_ARGS__)),void*:pl_fake(__VA_ARGS__),default:0?pl_fake(__VA_ARGS__):pl_fake(__VA_ARGS__)))
+ #define pl_decay(/*type*/...) typeof(_Generic(0?(void*)0:(typeof(_Generic(typeof(0?pl_fake(__VA_ARGS__):pl_fake(__VA_ARGS__)),typeof_unqual(__VA_ARGS__):0,default:0?pl_fake(__VA_ARGS__):pl_fake(__VA_ARGS__))))0,void*:pl_fake(__VA_ARGS__),default:0?pl_fake(__VA_ARGS__):pl_fake(__VA_ARGS__)))
 #endif
 
 // Evaluates to whether the argument's type is decayed.
+// The argument's type must not be an incomplete struct.
 #define pl_is_decayed(/*type*/...) _Generic(typeof_unqual(__VA_ARGS__),pl_decay(__VA_ARGS__):1,default:0)
 
 // Evaluates to whether the argument's type is a void type.

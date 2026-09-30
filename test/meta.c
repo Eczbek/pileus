@@ -1,6 +1,7 @@
 #include <pl/meta.h>
 
 int main() {}
+struct incomplete;
 
 static_assert(pl_is_same(int, int));
 static_assert(!pl_is_same(int, char));
@@ -54,6 +55,7 @@ static_assert(pl_is_function(int()));
 static_assert(pl_is_function(int(int)));
 static_assert(pl_is_function(int(...)));
 static_assert(!pl_is_function(int(*)(int)));
+static_assert(!pl_is_function(struct incomplete));
 
 static_assert(!pl_is_array(int));
 static_assert(!pl_is_array(int*));
@@ -63,6 +65,7 @@ static_assert(!pl_is_array(int()));
 static_assert(!pl_is_array(char));
 static_assert(!pl_is_array(float));
 static_assert(!pl_is_array(int* const));
+static_assert(!pl_is_array(struct incomplete));
 
 static_assert(!pl_is_function_or_array(int));
 static_assert(!pl_is_function_or_array(int*));
@@ -72,6 +75,7 @@ static_assert(pl_is_function_or_array(int()));
 static_assert(!pl_is_function_or_array(char));
 static_assert(!pl_is_function_or_array(float));
 static_assert(!pl_is_function_or_array(int* const));
+static_assert(!pl_is_function_or_array(struct incomplete));
 
 static_assert(!pl_is_sized_array(int));
 static_assert(pl_is_sized_array(int[1]));
@@ -219,6 +223,7 @@ static_assert(!pl_is_const(int* volatile _Atomic restrict));
 static_assert(pl_is_const(int* const volatile _Atomic restrict));
 #endif
 static_assert(!pl_is_const(int()));
+static_assert(pl_is_const(struct incomplete const));
 
 static_assert(!pl_is_volatile(int));
 static_assert(!pl_is_volatile(int const));
