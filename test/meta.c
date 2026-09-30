@@ -278,6 +278,7 @@ static_assert(pl_is_atomic(int* const volatile _Atomic restrict));
 #endif
 static_assert(!pl_is_atomic(int[]));
 static_assert(!pl_is_atomic(int()));
+static_assert(!pl_is_atomic(void));
 
 static_assert(!pl_is_const_atomic(int));
 static_assert(!pl_is_const_atomic(int const));
