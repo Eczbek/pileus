@@ -6,7 +6,7 @@
 
 int main() {
 	pl_term_save_screen();
-	pl_term_hide_cursor();
+	pl_term_set_cursor_visible(false);
 	pl_term_set_echo(false);
 	pl_term_set_canonical(false);
 
@@ -39,6 +39,6 @@ int main() {
 
 	pl_term_set_canonical(true);
 	pl_term_set_echo(true);
-	pl_term_show_cursor();
+	pl_term_set_cursor_visible(true);
 	pl_term_restore_screen();
 }

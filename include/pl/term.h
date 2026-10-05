@@ -41,14 +41,9 @@ static inline void pl_term_restore_screen() {
 	printf("\x1B[u\x1B[?47l");
 }
 
-// Makes the cursor invisible.
-static inline void pl_term_hide_cursor() {
-	printf("\x1B[?25l");
-}
-
-// Makes the cursor visibile.
-static inline void pl_term_show_cursor() {
-	printf("\x1B[?25h");
+// Sets the cursor visibility.
+static inline void pl_term_set_cursor_visible(bool option) {
+	printf(option ? "\x1B[?25h" : "\x1B[?25l");
 }
 
 typedef struct {
