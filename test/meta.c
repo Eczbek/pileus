@@ -121,6 +121,7 @@ static_assert(pl_is_same(pl_decay(char), char));
 static_assert(pl_is_same(pl_decay(int[]), int*));
 static_assert(pl_is_same(pl_decay(int[1]), int*));
 static_assert(pl_is_same(pl_decay(int()), int(*)()));
+static_assert(pl_is_same(pl_decay(struct incomplete), struct incomplete));
 
 static_assert(pl_is_int(int));
 static_assert(pl_is_int(int const));

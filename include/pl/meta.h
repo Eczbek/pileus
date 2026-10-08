@@ -88,12 +88,7 @@
 #define pl_drop_extent(/*type*/...) pl_choose_type(pl_is_array(__VA_ARGS__),*pl_fake(pl_choose_type(pl_is_array(__VA_ARGS__),typeof(__VA_ARGS__),"")),__VA_ARGS__)
 
 // Evaluates to the argument's type decayed to a pointer if it is an array or function type.
-// The argument's type must not be an incomplete struct.
-#ifndef __clang__
- #define pl_decay(/*type*/...) typeof(_Generic(0?(void*)0:(typeof(_Generic(0?pl_fake(__VA_ARGS__):pl_fake(__VA_ARGS__),typeof_unqual(__VA_ARGS__):0,default:0?pl_fake(__VA_ARGS__):pl_fake(__VA_ARGS__))))0,void*:pl_fake(__VA_ARGS__),default:0?pl_fake(__VA_ARGS__):pl_fake(__VA_ARGS__)))
-#else
- #define pl_decay(/*type*/...) typeof(_Generic(0?(void*)0:(typeof(_Generic(typeof(0?pl_fake(__VA_ARGS__):pl_fake(__VA_ARGS__)),typeof_unqual(__VA_ARGS__):0,default:0?pl_fake(__VA_ARGS__):pl_fake(__VA_ARGS__))))0,void*:pl_fake(__VA_ARGS__),default:0?pl_fake(__VA_ARGS__):pl_fake(__VA_ARGS__)))
-#endif
+#define pl_decay(/*type*/...) pl_choose_type(pl_is_function_or_array(__VA_ARGS__),0?pl_choose(pl_is_function_or_array(__VA_ARGS__),pl_fake(__VA_ARGS__),0):pl_choose(pl_is_function_or_array(__VA_ARGS__),pl_fake(__VA_ARGS__),0),__VA_ARGS__)
 
 // Evaluates to whether the argument's type is decayed.
 // The argument's type must not be an incomplete struct.
