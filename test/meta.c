@@ -67,16 +67,6 @@ static_assert(!pl_is_array(float));
 static_assert(!pl_is_array(int* const));
 static_assert(!pl_is_array(struct incomplete));
 
-static_assert(!pl_is_function_or_array(int));
-static_assert(!pl_is_function_or_array(int*));
-static_assert(pl_is_function_or_array(int[]));
-static_assert(pl_is_function_or_array(int[1]));
-static_assert(pl_is_function_or_array(int()));
-static_assert(!pl_is_function_or_array(char));
-static_assert(!pl_is_function_or_array(float));
-static_assert(!pl_is_function_or_array(int* const));
-static_assert(!pl_is_function_or_array(struct incomplete));
-
 static_assert(!pl_is_sized_array(int));
 static_assert(pl_is_sized_array(int[1]));
 static_assert(!pl_is_sized_array(int[]));
@@ -115,6 +105,10 @@ static_assert(pl_is_decayed(int(*)(int)));
 static_assert(!pl_is_decayed(int[]));
 static_assert(!pl_is_decayed(int[1]));
 static_assert(!pl_is_decayed(int()));
+static_assert(pl_is_decayed(char));
+static_assert(pl_is_decayed(float));
+static_assert(pl_is_decayed(int* const));
+static_assert(pl_is_decayed(struct incomplete));
 
 static_assert(pl_is_same(pl_decay(int), int));
 static_assert(pl_is_same(pl_decay(char), char));

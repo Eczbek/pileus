@@ -41,7 +41,7 @@
  #ifndef __clang__
   #define pl_is_pointer(/*type*/...) (5==__builtin_classify_type(typeof(__VA_ARGS__)))
  #else
-  #define pl_is_pointer(/*type*/...) (5==__builtin_classify_type(pl_fake(__VA_ARGS__))!=pl_is_function_or_array(__VA_ARGS__))
+  #define pl_is_pointer(/*type*/...) (5==__builtin_classify_type(pl_fake(__VA_ARGS__))==pl_is_decayed(__VA_ARGS__))
  #endif
 #endif
 
@@ -58,13 +58,6 @@
  #define pl_is_array(/*type*/...) (14==__builtin_classify_type(typeof(__VA_ARGS__)))
 #else
  #define pl_is_array(/*type*/...) _Generic(int(typeof_unqual(_Generic(pl_fake_unqual(__VA_ARGS__),typeof_unqual(__VA_ARGS__)*:0,void:0,default:pl_fake(__VA_ARGS__)))),int(typeof_unqual(_Generic(pl_fake_unqual(__VA_ARGS__),typeof_unqual(__VA_ARGS__)*:0,void:0,default:pl_fake(__VA_ARGS__)))const):0,default:1)
-#endif
-
-// Evaluates to whether the argument's type is a function or array type.
-#if defined(__GNUC__) && !defined(__clang__)
- #define pl_is_function_or_array(/*type*/...) (1&34816l>>(1+__builtin_classify_type(typeof(__VA_ARGS__))))
-#else
- #define pl_is_function_or_array(/*type*/...) _Generic(int(typeof_unqual(_Generic(pl_fake_unqual(__VA_ARGS__),void:0,default:pl_fake(__VA_ARGS__)))),int(typeof_unqual(_Generic(pl_fake_unqual(__VA_ARGS__),typeof_unqual(__VA_ARGS__)*:0,void:0,default:pl_fake(__VA_ARGS__)))const):0,default:1)
 #endif
 
 // Evaluates to whether the argument's type is a sized array type.
@@ -87,12 +80,15 @@
 // Otherwise, evaluates to the original type.
 #define pl_drop_extent(/*type*/...) pl_choose_type(pl_is_array(__VA_ARGS__),*pl_fake(pl_choose_type(pl_is_array(__VA_ARGS__),typeof(__VA_ARGS__),"")),__VA_ARGS__)
 
-// Evaluates to the argument's type decayed to a pointer if it is an array or function type.
-#define pl_decay(/*type*/...) pl_choose_type(pl_is_function_or_array(__VA_ARGS__),0?pl_choose(pl_is_function_or_array(__VA_ARGS__),pl_fake(__VA_ARGS__),0):pl_choose(pl_is_function_or_array(__VA_ARGS__),pl_fake(__VA_ARGS__),0),__VA_ARGS__)
+// Evaluates to the argument's type, without qualifiers, decayed to a pointer if it is an array or function type.
+#define pl_decay(/*type*/...) pl_choose_type(pl_is_decayed(__VA_ARGS__),typeof_unqual(__VA_ARGS__),0,pl_choose(pl_is_decayed(__VA_ARGS__),0,pl_fake(__VA_ARGS__)))
 
 // Evaluates to whether the argument's type is decayed.
-// The argument's type must not be an incomplete struct.
-#define pl_is_decayed(/*type*/...) _Generic(typeof_unqual(__VA_ARGS__),pl_decay(__VA_ARGS__):1,default:0)
+#if defined(__GNUC__) && !defined(__clang__)
+ #define pl_is_decayed(/*type*/...) (1^1&34816l>>(1+__builtin_classify_type(typeof(__VA_ARGS__))))
+#else
+ #define pl_is_decayed(/*type*/...) _Generic(int(typeof_unqual(_Generic(pl_fake_unqual(__VA_ARGS__),void:0,default:pl_fake(__VA_ARGS__)))),int(typeof_unqual(_Generic(pl_fake_unqual(__VA_ARGS__),typeof_unqual(__VA_ARGS__)*:0,void:0,default:pl_fake(__VA_ARGS__)))const):1,default:0)
+#endif
 
 // Evaluates to whether the argument's type is a void type.
 #define pl_is_void(/*type*/...) _Generic(typeof_unqual(__VA_ARGS__),void:1,default:0)
@@ -159,9 +155,9 @@
 // Evaluates to whether the argument's type has an _Atomic qualifier.
 #ifndef __STDC_NO_ATOMICS__
  #ifndef __clang__
-  #define pl_is_atomic(/*type*/...) _Generic(typeof(__VA_ARGS__),pl_choose_type(pl_is_function_or_array(__VA_ARGS__),0,typeof(__VA_ARGS__))_Atomic:1,default:0)
+  #define pl_is_atomic(/*type*/...) _Generic(typeof(__VA_ARGS__),pl_choose_type(pl_is_decayed(__VA_ARGS__),typeof(__VA_ARGS__),0)_Atomic:1,default:0)
  #else
-  #define pl_is_atomic(/*type*/...) _Generic(pl_add_const_volatile(__VA_ARGS__),pl_choose_type(pl_is_function_or_array(__VA_ARGS__)|pl_is_void(__VA_ARGS__),0,typeof_unqual(__VA_ARGS__))const volatile _Atomic:1,default:0)
+  #define pl_is_atomic(/*type*/...) _Generic(pl_add_const_volatile(__VA_ARGS__),pl_choose_type(!pl_is_decayed(__VA_ARGS__)|pl_is_void(__VA_ARGS__),0,typeof_unqual(__VA_ARGS__))const volatile _Atomic:1,default:0)
  #endif
 #else
  #define pl_is_atomic(/*type*/...) 0
@@ -170,9 +166,9 @@
 // Evaluates to whether the argument's type has const and _Atomic qualifiers.
 #ifndef __STDC_NO_ATOMICS__
  #ifndef __clang__
-  #define pl_is_const_atomic(/*type*/...) _Generic(typeof(__VA_ARGS__),pl_choose_type(pl_is_function_or_array(__VA_ARGS__),0,typeof(__VA_ARGS__))const _Atomic:1,default:0)
+  #define pl_is_const_atomic(/*type*/...) _Generic(typeof(__VA_ARGS__),pl_choose_type(pl_is_decayed(__VA_ARGS__),typeof(__VA_ARGS__),0)const _Atomic:1,default:0)
  #else
-  #define pl_is_const_atomic(/*type*/...) _Generic(pl_add_volatile(__VA_ARGS__),pl_choose_type(pl_is_function_or_array(__VA_ARGS__)|pl_is_void(__VA_ARGS__),0,typeof_unqual(__VA_ARGS__))const volatile _Atomic:1,default:0)
+  #define pl_is_const_atomic(/*type*/...) _Generic(pl_add_volatile(__VA_ARGS__),pl_choose_type(!pl_is_decayed(__VA_ARGS__)|pl_is_void(__VA_ARGS__),0,typeof_unqual(__VA_ARGS__))const volatile _Atomic:1,default:0)
  #endif
 #else
  #define pl_is_const_atomic(/*type*/...) 0
@@ -181,9 +177,9 @@
 // Evaluates to whether the argument's type has volatile and _Atomic qualifiers.
 #ifndef __STDC_NO_ATOMICS__
  #ifndef __clang__
-  #define pl_is_volatile_atomic(/*type*/...) _Generic(typeof(__VA_ARGS__),pl_choose_type(pl_is_function_or_array(__VA_ARGS__),0,typeof(__VA_ARGS__))volatile _Atomic:1,default:0)
+  #define pl_is_volatile_atomic(/*type*/...) _Generic(typeof(__VA_ARGS__),pl_choose_type(pl_is_decayed(__VA_ARGS__),typeof(__VA_ARGS__),0)volatile _Atomic:1,default:0)
  #else
-  #define pl_is_volatile_atomic(/*type*/...) _Generic(pl_add_const(__VA_ARGS__),pl_choose_type(pl_is_function_or_array(__VA_ARGS__)|pl_is_void(__VA_ARGS__),0,typeof_unqual(__VA_ARGS__))const volatile _Atomic:1,default:0)
+  #define pl_is_volatile_atomic(/*type*/...) _Generic(pl_add_const(__VA_ARGS__),pl_choose_type(!pl_is_decayed(__VA_ARGS__)|pl_is_void(__VA_ARGS__),0,typeof_unqual(__VA_ARGS__))const volatile _Atomic:1,default:0)
  #endif
 #else
  #define pl_is_volatile_atomic(/*type*/...) 0
@@ -192,9 +188,9 @@
 // Evaluates to whether the argument's type has const, volatile, and _Atomic qualifiers.
 #ifndef __STDC_NO_ATOMICS__
  #ifndef __clang__
-  #define pl_is_const_volatile_atomic(/*type*/...) _Generic(typeof(__VA_ARGS__),pl_choose_type(pl_is_function_or_array(__VA_ARGS__),0,typeof(__VA_ARGS__))const volatile _Atomic:1,default:0)
+  #define pl_is_const_volatile_atomic(/*type*/...) _Generic(typeof(__VA_ARGS__),pl_choose_type(pl_is_decayed(__VA_ARGS__),typeof(__VA_ARGS__),0)const volatile _Atomic:1,default:0)
  #else
-  #define pl_is_const_volatile_atomic(/*type*/...) _Generic(typeof(__VA_ARGS__),pl_choose_type(pl_is_function_or_array(__VA_ARGS__)|pl_is_void(__VA_ARGS__),0,typeof_unqual(__VA_ARGS__))const volatile _Atomic:1,default:0)
+  #define pl_is_const_volatile_atomic(/*type*/...) _Generic(typeof(__VA_ARGS__),pl_choose_type(!pl_is_decayed(__VA_ARGS__)|pl_is_void(__VA_ARGS__),0,typeof_unqual(__VA_ARGS__))const volatile _Atomic:1,default:0)
  #endif
 #else
  #define pl_is_const_volatile_atomic(/*type*/...) 0
@@ -204,10 +200,10 @@
 #ifdef __GNUC__
  #define pl_is_restrict(/*type*/...) _Generic(typeof(__VA_ARGS__),pl_choose_type(pl_is_pointer(__VA_ARGS__),typeof(__VA_ARGS__),int*)restrict:1,default:0)
 #elif defined(__clang__) || defined(__STDC_NO_ATOMICS__)
- #define pl_is_restrict(/*type*/...) _Generic(pl_choose_type(pl_is_function_or_array(__VA_ARGS__),0,typeof(__VA_ARGS__))const volatile,pl_choose_type
-  (pl_is_function_or_array(__VA_ARGS__),0,typeof_unqual(__VA_ARGS__))const volatile:0,default:!pl_is_atomic(__VA_ARGS__))
+ #define pl_is_restrict(/*type*/...) _Generic(pl_choose_type(pl_is_decayed(__VA_ARGS__),typeof(__VA_ARGS__),0)const volatile,pl_choose_type
+  (pl_is_decayed(__VA_ARGS__),typeof_unqual(__VA_ARGS__),0)const volatile:0,default:!pl_is_atomic(__VA_ARGS__))
 #else
- #define pl_is_restrict(/*type*/...) _Generic(pl_choose_type(pl_is_function_or_array(__VA_ARGS__),0,typeof(__VA_ARGS__))const volatile _Atomic,pl_choose_type(pl_is_function_or_array(__VA_ARGS__),0,typeof_unqual(__VA_ARGS__))const volatile _Atomic:0,default:1)
+ #define pl_is_restrict(/*type*/...) _Generic(pl_choose_type(pl_is_decayed(__VA_ARGS__),typeof(__VA_ARGS__),0)const volatile _Atomic,pl_choose_type(pl_is_decayed(__VA_ARGS__),typeof_unqual(__VA_ARGS__),0)const volatile _Atomic:0,default:1)
 #endif
 
 // Evaluates to whether the argument's type has const and restrict qualifiers.
@@ -263,10 +259,10 @@
 // If the argument's type is a function or array type, it is unchanged.
 #ifndef __STDC_NO_ATOMICS__
  #ifndef __clang__
-  #define pl_add_atomic(/*type*/...) pl_choose_type(pl_is_function_or_array(__VA_ARGS__),typeof(__VA_ARGS__),pl_choose_type(pl_is_function_or_array(__VA_ARGS__),0,typeof(__VA_ARGS__))_Atomic)
+  #define pl_add_atomic(/*type*/...) pl_choose_type(pl_is_decayed(__VA_ARGS__),pl_choose_type(pl_is_decayed(__VA_ARGS__),typeof(__VA_ARGS__),0)_Atomic,typeof(__VA_ARGS__))
  #else
   // If the argument's type is void or has a restrict qualifier, _Atomic is not applied.
-  #define pl_add_atomic(/*type*/...) typeof(_Generic(pl_add_const_volatile(__VA_ARGS__),pl_choose_type(pl_is_function_or_array(__VA_ARGS__),0,typeof_unqual(__VA_ARGS__))const volatile:pl_fake(typeof(_Generic(pl_add_const_volatile(__VA_ARGS__),pl_choose_type(pl_is_function_or_array(__VA_ARGS__)|pl_is_void(__VA_ARGS__),0,typeof_unqual(__VA_ARGS__))const volatile:pl_fake(__VA_ARGS__),default:0))_Atomic),default:pl_fake(__VA_ARGS__)))
+  #define pl_add_atomic(/*type*/...) typeof(_Generic(pl_add_const_volatile(__VA_ARGS__),pl_choose_type(pl_is_decayed(__VA_ARGS__),typeof_unqual(__VA_ARGS__),0)const volatile:pl_fake(typeof(_Generic(pl_add_const_volatile(__VA_ARGS__),pl_choose_type(!pl_is_decayed(__VA_ARGS__)|pl_is_void(__VA_ARGS__),0,typeof_unqual(__VA_ARGS__))const volatile:pl_fake(__VA_ARGS__),default:0))_Atomic),default:pl_fake(__VA_ARGS__)))
  #endif
 #else
  #define pl_add_atomic(/*type*/...) typeof(__VA_ARGS__)
@@ -276,10 +272,10 @@
 // If the argument's type is a function or array type, it is unchanged.
 #ifndef __STDC_NO_ATOMICS__
  #ifndef __clang__
-  #define pl_add_const_atomic(/*type*/...) pl_choose_type(pl_is_function_or_array(__VA_ARGS__),typeof(__VA_ARGS__),pl_choose_type(pl_is_function_or_array(__VA_ARGS__),0,typeof(__VA_ARGS__))const _Atomic)
+  #define pl_add_const_atomic(/*type*/...) pl_choose_type(pl_is_decayed(__VA_ARGS__),pl_choose_type(pl_is_decayed(__VA_ARGS__),typeof(__VA_ARGS__),0)const _Atomic,typeof(__VA_ARGS__))
  #else
   // If the argument's type is void or has a restrict qualifier, _Atomic is not applied.
-  #define pl_add_const_atomic(/*type*/...) typeof(_Generic(pl_add_const_volatile(__VA_ARGS__),pl_choose_type(pl_is_function_or_array(__VA_ARGS__),0,typeof_unqual(__VA_ARGS__))const volatile:pl_fake(typeof(_Generic(pl_add_const_volatile(__VA_ARGS__),pl_choose_type(pl_is_function_or_array(__VA_ARGS__)|pl_is_void(__VA_ARGS__),0,typeof_unqual(__VA_ARGS__))const volatile:pl_fake(__VA_ARGS__),default:0))const _Atomic),default:pl_fake(pl_add_const(__VA_ARGS__))))
+  #define pl_add_const_atomic(/*type*/...) typeof(_Generic(pl_add_const_volatile(__VA_ARGS__),pl_choose_type(pl_is_decayed(__VA_ARGS__),typeof_unqual(__VA_ARGS__),0)const volatile:pl_fake(typeof(_Generic(pl_add_const_volatile(__VA_ARGS__),pl_choose_type(!pl_is_decayed(__VA_ARGS__)|pl_is_void(__VA_ARGS__),0,typeof_unqual(__VA_ARGS__))const volatile:pl_fake(__VA_ARGS__),default:0))const _Atomic),default:pl_fake(pl_add_const(__VA_ARGS__))))
  #endif
 #else
  #define pl_add_const_atomic(/*type*/...) pl_add_const(__VA_ARGS__)
@@ -289,10 +285,10 @@
 // If the argument's type is a function or array type, it is unchanged.
 #ifndef __STDC_NO_ATOMICS__
  #ifndef __clang__
-  #define pl_add_volatile_atomic(/*type*/...) pl_choose_type(pl_is_function_or_array(__VA_ARGS__),typeof(__VA_ARGS__),pl_choose_type(pl_is_function_or_array(__VA_ARGS__),0,typeof(__VA_ARGS__))volatile _Atomic)
+  #define pl_add_volatile_atomic(/*type*/...) pl_choose_type(pl_is_decayed(__VA_ARGS__),pl_choose_type(pl_is_decayed(__VA_ARGS__),typeof(__VA_ARGS__),0)volatile _Atomic,typeof(__VA_ARGS__))
  #else
   // If the argument's type is void or has a restrict qualifier, _Atomic is not applied.
-  #define pl_add_volatile_atomic(/*type*/...) typeof(_Generic(pl_add_const_volatile(__VA_ARGS__),pl_choose_type(pl_is_function_or_array(__VA_ARGS__),0,typeof_unqual(__VA_ARGS__))const volatile:pl_fake(typeof(_Generic(pl_add_const_volatile(__VA_ARGS__),pl_choose_type(pl_is_function_or_array(__VA_ARGS__)|pl_is_void(__VA_ARGS__),0,typeof_unqual(__VA_ARGS__))const volatile:pl_fake(__VA_ARGS__),default:0))volatile _Atomic),default:pl_fake(pl_add_volatile(__VA_ARGS__))))
+  #define pl_add_volatile_atomic(/*type*/...) typeof(_Generic(pl_add_const_volatile(__VA_ARGS__),pl_choose_type(pl_is_decayed(__VA_ARGS__),typeof_unqual(__VA_ARGS__),0)const volatile:pl_fake(typeof(_Generic(pl_add_const_volatile(__VA_ARGS__),pl_choose_type(!pl_is_decayed(__VA_ARGS__)|pl_is_void(__VA_ARGS__),0,typeof_unqual(__VA_ARGS__))const volatile:pl_fake(__VA_ARGS__),default:0))volatile _Atomic),default:pl_fake(pl_add_volatile(__VA_ARGS__))))
  #endif
 #else
  #define pl_add_volatile_atomic(/*type*/...) pl_add_volatile(__VA_ARGS__)
@@ -302,10 +298,10 @@
 // If the argument's type is a function or array type, it is unchanged.
 #ifndef __STDC_NO_ATOMICS__
  #ifndef __clang__
-  #define pl_add_const_volatile_atomic(/*type*/...) pl_choose_type(pl_is_function_or_array(__VA_ARGS__),typeof(__VA_ARGS__),pl_choose_type(pl_is_function_or_array(__VA_ARGS__),0,typeof(__VA_ARGS__))const volatile _Atomic)
+  #define pl_add_const_volatile_atomic(/*type*/...) pl_choose_type(pl_is_decayed(__VA_ARGS__),pl_choose_type(pl_is_decayed(__VA_ARGS__),typeof(__VA_ARGS__),0)const volatile _Atomic,typeof(__VA_ARGS__))
  #else
   // If the argument's type is void or has a restrict qualifier, _Atomic is not applied.
-  #define pl_add_const_volatile_atomic(/*type*/...) typeof(_Generic(pl_add_const_volatile(__VA_ARGS__),pl_choose_type(pl_is_function_or_array(__VA_ARGS__),0,typeof_unqual(__VA_ARGS__))const volatile:pl_fake(typeof(_Generic(pl_add_const_volatile(__VA_ARGS__),pl_choose_type(pl_is_function_or_array(__VA_ARGS__)|pl_is_void(__VA_ARGS__),0,typeof_unqual(__VA_ARGS__))const volatile:pl_fake(__VA_ARGS__),default:0))const volatile _Atomic),default:pl_fake(pl_add_const_volatile(__VA_ARGS__))))
+  #define pl_add_const_volatile_atomic(/*type*/...) typeof(_Generic(pl_add_const_volatile(__VA_ARGS__),pl_choose_type(pl_is_decayed(__VA_ARGS__),typeof_unqual(__VA_ARGS__),0)const volatile:pl_fake(typeof(_Generic(pl_add_const_volatile(__VA_ARGS__),pl_choose_type(!pl_is_decayed(__VA_ARGS__)|pl_is_void(__VA_ARGS__),0,typeof_unqual(__VA_ARGS__))const volatile:pl_fake(__VA_ARGS__),default:0))const volatile _Atomic),default:pl_fake(pl_add_const_volatile(__VA_ARGS__))))
  #endif
 #else
  #define pl_add_const_volatile_atomic(/*type*/...) pl_add_const_volatile(__VA_ARGS__)
@@ -385,9 +381,9 @@
 // Evaluates to the argument's type without a const qualifier.
 #ifndef __STDC_NO_ATOMICS__
  #ifndef __clang__
-  #define pl_drop_const(/*type*/...) pl_choose_type(pl_is_restrict(__VA_ARGS__),pl_choose_type(pl_is_restrict(__VA_ARGS__),pl_choose_type(pl_is_const_volatile_atomic(__VA_ARGS__),pl_choose_type(pl_is_function_or_array(__VA_ARGS__),0,typeof_unqual(__VA_ARGS__))volatile _Atomic,pl_choose_type(pl_is_const_volatile(__VA_ARGS__),pl_choose_type(pl_is_function(__VA_ARGS__),0,typeof_unqual(__VA_ARGS__))volatile,pl_choose_type(pl_is_const_atomic(__VA_ARGS__),pl_choose_type(pl_is_function_or_array(__VA_ARGS__),0,typeof_unqual(__VA_ARGS__))_Atomic,pl_choose_type(pl_is_const(__VA_ARGS__),typeof_unqual(__VA_ARGS__),__VA_ARGS__)))),int*)restrict,pl_choose_type(pl_is_const_volatile_atomic(__VA_ARGS__),pl_choose_type(pl_is_function_or_array(__VA_ARGS__),0,typeof_unqual(__VA_ARGS__))volatile _Atomic,pl_choose_type(pl_is_const_volatile(__VA_ARGS__),pl_choose_type(pl_is_function(__VA_ARGS__),0,typeof_unqual(__VA_ARGS__))volatile,pl_choose_type(pl_is_const_atomic(__VA_ARGS__),pl_choose_type(pl_is_function_or_array(__VA_ARGS__),0,typeof_unqual(__VA_ARGS__))_Atomic,pl_choose_type(pl_is_const(__VA_ARGS__),typeof_unqual(__VA_ARGS__),__VA_ARGS__)))))
+  #define pl_drop_const(/*type*/...) pl_choose_type(pl_is_restrict(__VA_ARGS__),pl_choose_type(pl_is_restrict(__VA_ARGS__),pl_choose_type(pl_is_const_volatile_atomic(__VA_ARGS__),pl_choose_type(pl_is_decayed(__VA_ARGS__),typeof_unqual(__VA_ARGS__),0)volatile _Atomic,pl_choose_type(pl_is_const_volatile(__VA_ARGS__),pl_choose_type(pl_is_function(__VA_ARGS__),0,typeof_unqual(__VA_ARGS__))volatile,pl_choose_type(pl_is_const_atomic(__VA_ARGS__),pl_choose_type(pl_is_decayed(__VA_ARGS__),typeof_unqual(__VA_ARGS__),0)_Atomic,pl_choose_type(pl_is_const(__VA_ARGS__),typeof_unqual(__VA_ARGS__),__VA_ARGS__)))),int*)restrict,pl_choose_type(pl_is_const_volatile_atomic(__VA_ARGS__),pl_choose_type(pl_is_decayed(__VA_ARGS__),typeof_unqual(__VA_ARGS__),0)volatile _Atomic,pl_choose_type(pl_is_const_volatile(__VA_ARGS__),pl_choose_type(pl_is_function(__VA_ARGS__),0,typeof_unqual(__VA_ARGS__))volatile,pl_choose_type(pl_is_const_atomic(__VA_ARGS__),pl_choose_type(pl_is_decayed(__VA_ARGS__),typeof_unqual(__VA_ARGS__),0)_Atomic,pl_choose_type(pl_is_const(__VA_ARGS__),typeof_unqual(__VA_ARGS__),__VA_ARGS__)))))
  #else
-  #define pl_drop_const(/*type*/...) pl_choose_type(pl_is_restrict(__VA_ARGS__),pl_choose_type(pl_is_restrict(__VA_ARGS__),pl_choose_type(pl_is_const_volatile(__VA_ARGS__),pl_choose_type(pl_is_function(__VA_ARGS__),0,typeof_unqual(__VA_ARGS__))volatile,pl_choose_type(pl_is_const(__VA_ARGS__),typeof_unqual(__VA_ARGS__),__VA_ARGS__)),int*)restrict,pl_choose_type(pl_is_const_volatile_atomic(__VA_ARGS__),pl_choose_type(pl_is_function_or_array(__VA_ARGS__),0,typeof_unqual(__VA_ARGS__))volatile _Atomic,pl_choose_type(pl_is_const_volatile(__VA_ARGS__),pl_choose_type(pl_is_function(__VA_ARGS__),0,typeof_unqual(__VA_ARGS__))volatile,pl_choose_type(pl_is_const_atomic(__VA_ARGS__),pl_choose_type(pl_is_function_or_array(__VA_ARGS__),0,typeof_unqual(__VA_ARGS__))_Atomic,pl_choose_type(pl_is_const(__VA_ARGS__),typeof_unqual(__VA_ARGS__),__VA_ARGS__)))))
+  #define pl_drop_const(/*type*/...) pl_choose_type(pl_is_restrict(__VA_ARGS__),pl_choose_type(pl_is_restrict(__VA_ARGS__),pl_choose_type(pl_is_const_volatile(__VA_ARGS__),pl_choose_type(pl_is_function(__VA_ARGS__),0,typeof_unqual(__VA_ARGS__))volatile,pl_choose_type(pl_is_const(__VA_ARGS__),typeof_unqual(__VA_ARGS__),__VA_ARGS__)),int*)restrict,pl_choose_type(pl_is_const_volatile_atomic(__VA_ARGS__),pl_choose_type(pl_is_decayed(__VA_ARGS__),typeof_unqual(__VA_ARGS__),0)volatile _Atomic,pl_choose_type(pl_is_const_volatile(__VA_ARGS__),pl_choose_type(pl_is_function(__VA_ARGS__),0,typeof_unqual(__VA_ARGS__))volatile,pl_choose_type(pl_is_const_atomic(__VA_ARGS__),pl_choose_type(pl_is_decayed(__VA_ARGS__),typeof_unqual(__VA_ARGS__),0)_Atomic,pl_choose_type(pl_is_const(__VA_ARGS__),typeof_unqual(__VA_ARGS__),__VA_ARGS__)))))
  #endif
 #else
  #define pl_drop_const(/*type*/...) pl_drop_const_atomic(__VA_ARGS__)
@@ -396,9 +392,9 @@
 // Evaluates to the argument's type without a volatile qualifier.
 #ifndef __STDC_NO_ATOMICS__
  #ifndef __clang__
-  #define pl_drop_volatile(/*type*/...) pl_choose_type(pl_is_restrict(__VA_ARGS__),pl_choose_type(pl_is_restrict(__VA_ARGS__),pl_choose_type(pl_is_const_volatile_atomic(__VA_ARGS__),pl_choose_type(pl_is_function_or_array(__VA_ARGS__),0,typeof_unqual(__VA_ARGS__))const _Atomic,pl_choose_type(pl_is_const_volatile(__VA_ARGS__),pl_choose_type(pl_is_function(__VA_ARGS__),0,typeof_unqual(__VA_ARGS__))const,pl_choose_type(pl_is_volatile_atomic(__VA_ARGS__),pl_choose_type(pl_is_function_or_array(__VA_ARGS__),0,typeof_unqual(__VA_ARGS__))_Atomic,pl_choose_type(pl_is_volatile(__VA_ARGS__),typeof_unqual(__VA_ARGS__),__VA_ARGS__)))),int*)restrict,pl_choose_type(pl_is_const_volatile_atomic(__VA_ARGS__),pl_choose_type(pl_is_function_or_array(__VA_ARGS__),0,typeof_unqual(__VA_ARGS__))const _Atomic,pl_choose_type(pl_is_const_volatile(__VA_ARGS__),pl_choose_type(pl_is_function(__VA_ARGS__),0,typeof_unqual(__VA_ARGS__))const,pl_choose_type(pl_is_volatile_atomic(__VA_ARGS__),pl_choose_type(pl_is_function_or_array(__VA_ARGS__),0,typeof_unqual(__VA_ARGS__))_Atomic,pl_choose_type(pl_is_volatile(__VA_ARGS__),typeof_unqual(__VA_ARGS__),__VA_ARGS__)))))
+  #define pl_drop_volatile(/*type*/...) pl_choose_type(pl_is_restrict(__VA_ARGS__),pl_choose_type(pl_is_restrict(__VA_ARGS__),pl_choose_type(pl_is_const_volatile_atomic(__VA_ARGS__),pl_choose_type(pl_is_decayed(__VA_ARGS__),typeof_unqual(__VA_ARGS__),0)const _Atomic,pl_choose_type(pl_is_const_volatile(__VA_ARGS__),pl_choose_type(pl_is_function(__VA_ARGS__),0,typeof_unqual(__VA_ARGS__))const,pl_choose_type(pl_is_volatile_atomic(__VA_ARGS__),pl_choose_type(pl_is_decayed(__VA_ARGS__),typeof_unqual(__VA_ARGS__),0)_Atomic,pl_choose_type(pl_is_volatile(__VA_ARGS__),typeof_unqual(__VA_ARGS__),__VA_ARGS__)))),int*)restrict,pl_choose_type(pl_is_const_volatile_atomic(__VA_ARGS__),pl_choose_type(pl_is_decayed(__VA_ARGS__),typeof_unqual(__VA_ARGS__),0)const _Atomic,pl_choose_type(pl_is_const_volatile(__VA_ARGS__),pl_choose_type(pl_is_function(__VA_ARGS__),0,typeof_unqual(__VA_ARGS__))const,pl_choose_type(pl_is_volatile_atomic(__VA_ARGS__),pl_choose_type(pl_is_decayed(__VA_ARGS__),typeof_unqual(__VA_ARGS__),0)_Atomic,pl_choose_type(pl_is_volatile(__VA_ARGS__),typeof_unqual(__VA_ARGS__),__VA_ARGS__)))))
  #else
-  #define pl_drop_volatile(/*type*/...) pl_choose_type(pl_is_restrict(__VA_ARGS__),pl_choose_type(pl_is_restrict(__VA_ARGS__),pl_choose_type(pl_is_const_volatile(__VA_ARGS__),pl_choose_type(pl_is_function(__VA_ARGS__),0,typeof_unqual(__VA_ARGS__))const,pl_choose_type(pl_is_volatile(__VA_ARGS__),typeof_unqual(__VA_ARGS__),__VA_ARGS__)),int*)restrict,pl_choose_type(pl_is_const_volatile_atomic(__VA_ARGS__),pl_choose_type(pl_is_function_or_array(__VA_ARGS__),0,typeof_unqual(__VA_ARGS__))const _Atomic,pl_choose_type(pl_is_const_volatile(__VA_ARGS__),pl_choose_type(pl_is_function(__VA_ARGS__),0,typeof_unqual(__VA_ARGS__))const,pl_choose_type(pl_is_volatile_atomic(__VA_ARGS__),pl_choose_type(pl_is_function_or_array(__VA_ARGS__),0,typeof_unqual(__VA_ARGS__))_Atomic,pl_choose_type(pl_is_volatile(__VA_ARGS__),typeof_unqual(__VA_ARGS__),__VA_ARGS__)))))
+  #define pl_drop_volatile(/*type*/...) pl_choose_type(pl_is_restrict(__VA_ARGS__),pl_choose_type(pl_is_restrict(__VA_ARGS__),pl_choose_type(pl_is_const_volatile(__VA_ARGS__),pl_choose_type(pl_is_function(__VA_ARGS__),0,typeof_unqual(__VA_ARGS__))const,pl_choose_type(pl_is_volatile(__VA_ARGS__),typeof_unqual(__VA_ARGS__),__VA_ARGS__)),int*)restrict,pl_choose_type(pl_is_const_volatile_atomic(__VA_ARGS__),pl_choose_type(pl_is_decayed(__VA_ARGS__),typeof_unqual(__VA_ARGS__),0)const _Atomic,pl_choose_type(pl_is_const_volatile(__VA_ARGS__),pl_choose_type(pl_is_function(__VA_ARGS__),0,typeof_unqual(__VA_ARGS__))const,pl_choose_type(pl_is_volatile_atomic(__VA_ARGS__),pl_choose_type(pl_is_decayed(__VA_ARGS__),typeof_unqual(__VA_ARGS__),0)_Atomic,pl_choose_type(pl_is_volatile(__VA_ARGS__),typeof_unqual(__VA_ARGS__),__VA_ARGS__)))))
  #endif
 #else
  #define pl_drop_volatile(/*type*/...) drop_volatile_atomic(__VA_ARGS__)
@@ -407,9 +403,9 @@
 // Evaluates to the argument's type without const and volatile qualifiers.
 #ifndef __STDC_NO_ATOMICS__
  #ifndef __clang__
-  #define pl_drop_const_volatile(/*type*/...) pl_choose_type(pl_is_restrict(__VA_ARGS__),pl_choose_type(pl_is_restrict(__VA_ARGS__),pl_choose_type(pl_is_atomic(__VA_ARGS__),pl_choose_type(pl_is_function_or_array(__VA_ARGS__),0,typeof_unqual(__VA_ARGS__))_Atomic,typeof_unqual(__VA_ARGS__)),int*)restrict,pl_choose_type(pl_is_atomic(__VA_ARGS__),pl_choose_type(pl_is_function_or_array(__VA_ARGS__),0,typeof_unqual(__VA_ARGS__))_Atomic,typeof_unqual(__VA_ARGS__)))
+  #define pl_drop_const_volatile(/*type*/...) pl_choose_type(pl_is_restrict(__VA_ARGS__),pl_choose_type(pl_is_restrict(__VA_ARGS__),pl_choose_type(pl_is_atomic(__VA_ARGS__),pl_choose_type(pl_is_decayed(__VA_ARGS__),typeof_unqual(__VA_ARGS__),0)_Atomic,typeof_unqual(__VA_ARGS__)),int*)restrict,pl_choose_type(pl_is_atomic(__VA_ARGS__),pl_choose_type(pl_is_decayed(__VA_ARGS__),typeof_unqual(__VA_ARGS__),0)_Atomic,typeof_unqual(__VA_ARGS__)))
  #else
-  #define pl_drop_const_volatile(/*type*/...) pl_choose_type(pl_is_restrict(__VA_ARGS__),pl_choose_type(pl_is_restrict(__VA_ARGS__),typeof_unqual(__VA_ARGS__),int*)restrict,pl_choose_type(pl_is_atomic(__VA_ARGS__),pl_choose_type(pl_is_function_or_array(__VA_ARGS__),0,typeof_unqual(__VA_ARGS__))_Atomic,typeof_unqual(__VA_ARGS__)))
+  #define pl_drop_const_volatile(/*type*/...) pl_choose_type(pl_is_restrict(__VA_ARGS__),pl_choose_type(pl_is_restrict(__VA_ARGS__),typeof_unqual(__VA_ARGS__),int*)restrict,pl_choose_type(pl_is_atomic(__VA_ARGS__),pl_choose_type(pl_is_decayed(__VA_ARGS__),typeof_unqual(__VA_ARGS__),0)_Atomic,typeof_unqual(__VA_ARGS__)))
  #endif
 #else
  #define pl_drop_const_volatile(/*type*/...) pl_drop_const_volatile_atomic(__VA_ARGS__)
@@ -418,9 +414,9 @@
 // Evaluates to the argument's type without an _Atomic qualifier.
 #ifndef __STDC_NO_ATOMICS__
  #ifndef __clang__
-  #define pl_drop_atomic(/*type*/...) pl_choose_type(pl_is_restrict(__VA_ARGS__),pl_choose_type(pl_is_restrict(__VA_ARGS__),pl_choose_type(pl_is_const_volatile_atomic(__VA_ARGS__),pl_choose_type(pl_is_function_or_array(__VA_ARGS__),0,typeof_unqual(__VA_ARGS__))const volatile,pl_choose_type(pl_is_const_atomic(__VA_ARGS__),pl_choose_type(pl_is_function(__VA_ARGS__),0,typeof_unqual(__VA_ARGS__))const,pl_choose_type(pl_is_volatile_atomic(__VA_ARGS__),pl_choose_type(pl_is_function_or_array(__VA_ARGS__),0,typeof_unqual(__VA_ARGS__))volatile,pl_choose_type(pl_is_atomic(__VA_ARGS__),typeof_unqual(__VA_ARGS__),__VA_ARGS__)))),int*)restrict,pl_choose_type(pl_is_const_volatile_atomic(__VA_ARGS__),pl_choose_type(pl_is_function_or_array(__VA_ARGS__),0,typeof_unqual(__VA_ARGS__))const volatile,pl_choose_type(pl_is_const_atomic(__VA_ARGS__),pl_choose_type(pl_is_function(__VA_ARGS__),0,typeof_unqual(__VA_ARGS__))const,pl_choose_type(pl_is_volatile_atomic(__VA_ARGS__),pl_choose_type(pl_is_function_or_array(__VA_ARGS__),0,typeof_unqual(__VA_ARGS__))volatile,pl_choose_type(pl_is_atomic(__VA_ARGS__),typeof_unqual(__VA_ARGS__),__VA_ARGS__)))))
+  #define pl_drop_atomic(/*type*/...) pl_choose_type(pl_is_restrict(__VA_ARGS__),pl_choose_type(pl_is_restrict(__VA_ARGS__),pl_choose_type(pl_is_const_volatile_atomic(__VA_ARGS__),pl_choose_type(pl_is_decayed(__VA_ARGS__),typeof_unqual(__VA_ARGS__),0)const volatile,pl_choose_type(pl_is_const_atomic(__VA_ARGS__),pl_choose_type(pl_is_function(__VA_ARGS__),0,typeof_unqual(__VA_ARGS__))const,pl_choose_type(pl_is_volatile_atomic(__VA_ARGS__),pl_choose_type(pl_is_decayed(__VA_ARGS__),typeof_unqual(__VA_ARGS__),0)volatile,pl_choose_type(pl_is_atomic(__VA_ARGS__),typeof_unqual(__VA_ARGS__),__VA_ARGS__)))),int*)restrict,pl_choose_type(pl_is_const_volatile_atomic(__VA_ARGS__),pl_choose_type(pl_is_decayed(__VA_ARGS__),typeof_unqual(__VA_ARGS__),0)const volatile,pl_choose_type(pl_is_const_atomic(__VA_ARGS__),pl_choose_type(pl_is_function(__VA_ARGS__),0,typeof_unqual(__VA_ARGS__))const,pl_choose_type(pl_is_volatile_atomic(__VA_ARGS__),pl_choose_type(pl_is_decayed(__VA_ARGS__),typeof_unqual(__VA_ARGS__),0)volatile,pl_choose_type(pl_is_atomic(__VA_ARGS__),typeof_unqual(__VA_ARGS__),__VA_ARGS__)))))
  #else
-  #define pl_drop_atomic(/*type*/...) pl_choose_type(pl_is_restrict(__VA_ARGS__),pl_choose_type(pl_is_restrict(__VA_ARGS__),typeof(__VA_ARGS__),int*)restrict,pl_choose_type(pl_is_const_volatile_atomic(__VA_ARGS__),pl_choose_type(pl_is_function_or_array(__VA_ARGS__),0,typeof_unqual(__VA_ARGS__))const volatile,pl_choose_type(pl_is_const_atomic(__VA_ARGS__),pl_choose_type(pl_is_function(__VA_ARGS__),0,typeof_unqual(__VA_ARGS__))const,pl_choose_type(pl_is_volatile_atomic(__VA_ARGS__),pl_choose_type(pl_is_function_or_array(__VA_ARGS__),0,typeof_unqual(__VA_ARGS__))volatile,pl_choose_type(pl_is_atomic(__VA_ARGS__),typeof_unqual(__VA_ARGS__),__VA_ARGS__)))))
+  #define pl_drop_atomic(/*type*/...) pl_choose_type(pl_is_restrict(__VA_ARGS__),pl_choose_type(pl_is_restrict(__VA_ARGS__),typeof(__VA_ARGS__),int*)restrict,pl_choose_type(pl_is_const_volatile_atomic(__VA_ARGS__),pl_choose_type(pl_is_decayed(__VA_ARGS__),typeof_unqual(__VA_ARGS__),0)const volatile,pl_choose_type(pl_is_const_atomic(__VA_ARGS__),pl_choose_type(pl_is_function(__VA_ARGS__),0,typeof_unqual(__VA_ARGS__))const,pl_choose_type(pl_is_volatile_atomic(__VA_ARGS__),pl_choose_type(pl_is_decayed(__VA_ARGS__),typeof_unqual(__VA_ARGS__),0)volatile,pl_choose_type(pl_is_atomic(__VA_ARGS__),typeof_unqual(__VA_ARGS__),__VA_ARGS__)))))
  #endif
 #else
  #define pl_drop_atomic(/*type*/...) typeof(__VA_ARGS__)
@@ -437,28 +433,28 @@
 
 // Evaluates to the argument's type without a restrict qualifier.
 #ifndef __STDC_NO_ATOMICS__
- #define pl_drop_restrict(/*type*/...) pl_choose_type(pl_is_const_volatile_atomic(__VA_ARGS__),pl_choose_type(pl_is_function_or_array(__VA_ARGS__),0,typeof_unqual(__VA_ARGS__))const volatile _Atomic,pl_choose_type(pl_is_const_atomic(__VA_ARGS__),pl_choose_type(pl_is_function_or_array(__VA_ARGS__),0,typeof_unqual(__VA_ARGS__))const _Atomic,pl_choose_type(pl_is_volatile_atomic(__VA_ARGS__),pl_choose_type(pl_is_function_or_array(__VA_ARGS__),0,typeof_unqual(__VA_ARGS__))volatile _Atomic,pl_choose_type(pl_is_atomic(__VA_ARGS__),pl_choose_type(pl_is_function_or_array(__VA_ARGS__),0,typeof_unqual(__VA_ARGS__))_Atomic,pl_choose_type(pl_is_const_volatile(__VA_ARGS__),pl_choose_type(pl_is_function(__VA_ARGS__),0,typeof_unqual(__VA_ARGS__))const volatile,pl_choose_type(pl_is_const(__VA_ARGS__),pl_choose_type(pl_is_function(__VA_ARGS__),0,typeof_unqual(__VA_ARGS__))const,pl_choose_type(pl_is_volatile(__VA_ARGS__),pl_choose_type(pl_is_function(__VA_ARGS__),0,typeof_unqual(__VA_ARGS__))volatile,typeof_unqual(__VA_ARGS__))))))))
+ #define pl_drop_restrict(/*type*/...) pl_choose_type(pl_is_const_volatile_atomic(__VA_ARGS__),pl_choose_type(pl_is_decayed(__VA_ARGS__),typeof_unqual(__VA_ARGS__),0)const volatile _Atomic,pl_choose_type(pl_is_const_atomic(__VA_ARGS__),pl_choose_type(pl_is_decayed(__VA_ARGS__),typeof_unqual(__VA_ARGS__),0)const _Atomic,pl_choose_type(pl_is_volatile_atomic(__VA_ARGS__),pl_choose_type(pl_is_decayed(__VA_ARGS__),typeof_unqual(__VA_ARGS__),0)volatile _Atomic,pl_choose_type(pl_is_atomic(__VA_ARGS__),pl_choose_type(pl_is_decayed(__VA_ARGS__),typeof_unqual(__VA_ARGS__),0)_Atomic,pl_choose_type(pl_is_const_volatile(__VA_ARGS__),pl_choose_type(pl_is_function(__VA_ARGS__),0,typeof_unqual(__VA_ARGS__))const volatile,pl_choose_type(pl_is_const(__VA_ARGS__),pl_choose_type(pl_is_function(__VA_ARGS__),0,typeof_unqual(__VA_ARGS__))const,pl_choose_type(pl_is_volatile(__VA_ARGS__),pl_choose_type(pl_is_function(__VA_ARGS__),0,typeof_unqual(__VA_ARGS__))volatile,typeof_unqual(__VA_ARGS__))))))))
 #else
  #define pl_drop_restrict(/*type*/...) pl_drop_atomic_restrict(__VA_ARGS__)
 #endif
 
 // Evaluates to the argument's type without const and restrict qualifiers.
 #ifndef __STDC_NO_ATOMICS__
- #define pl_drop_const_restrict(/*type*/...) pl_choose_type(pl_is_volatile_atomic(__VA_ARGS__),pl_choose_type(pl_is_function_or_array(__VA_ARGS__),0,typeof_unqual(__VA_ARGS__))volatile _Atomic,pl_choose_type(pl_is_atomic(__VA_ARGS__),pl_choose_type(pl_is_function_or_array(__VA_ARGS__),0,typeof_unqual(__VA_ARGS__))_Atomic,pl_choose_type(pl_is_volatile(__VA_ARGS__),pl_choose_type(pl_is_function(__VA_ARGS__),0,typeof_unqual(__VA_ARGS__))volatile,typeof_unqual(__VA_ARGS__))))
+ #define pl_drop_const_restrict(/*type*/...) pl_choose_type(pl_is_volatile_atomic(__VA_ARGS__),pl_choose_type(pl_is_decayed(__VA_ARGS__),typeof_unqual(__VA_ARGS__),0)volatile _Atomic,pl_choose_type(pl_is_atomic(__VA_ARGS__),pl_choose_type(pl_is_decayed(__VA_ARGS__),typeof_unqual(__VA_ARGS__),0)_Atomic,pl_choose_type(pl_is_volatile(__VA_ARGS__),pl_choose_type(pl_is_function(__VA_ARGS__),0,typeof_unqual(__VA_ARGS__))volatile,typeof_unqual(__VA_ARGS__))))
 #else
  #define pl_drop_const_restrict(/*type*/...) pl_drop_const_atomic_restrict(__VA_ARGS__)
 #endif
 
 // Evaluates to the argument's type without volatile and restrict qualifiers.
 #ifndef __STDC_NO_ATOMICS__
- #define pl_drop_volatile_restrict(/*type*/...) pl_choose_type(pl_is_const_atomic(__VA_ARGS__),pl_choose_type(pl_is_function_or_array(__VA_ARGS__),0,typeof_unqual(__VA_ARGS__))const _Atomic,pl_choose_type(pl_is_atomic(__VA_ARGS__),pl_choose_type(pl_is_function_or_array(__VA_ARGS__),0,typeof_unqual(__VA_ARGS__))_Atomic,pl_choose_type(pl_is_const(__VA_ARGS__),pl_choose_type(pl_is_function(__VA_ARGS__),0,typeof_unqual(__VA_ARGS__))const,typeof_unqual(__VA_ARGS__))))
+ #define pl_drop_volatile_restrict(/*type*/...) pl_choose_type(pl_is_const_atomic(__VA_ARGS__),pl_choose_type(pl_is_decayed(__VA_ARGS__),typeof_unqual(__VA_ARGS__),0)const _Atomic,pl_choose_type(pl_is_atomic(__VA_ARGS__),pl_choose_type(pl_is_decayed(__VA_ARGS__),typeof_unqual(__VA_ARGS__),0)_Atomic,pl_choose_type(pl_is_const(__VA_ARGS__),pl_choose_type(pl_is_function(__VA_ARGS__),0,typeof_unqual(__VA_ARGS__))const,typeof_unqual(__VA_ARGS__))))
 #else
  #define pl_drop_volatile_restrict(/*type*/...) pl_drop_volatile_atomic_restrict(__VA_ARGS__)
 #endif
 
 // Evaluates to the argument's type without const, volatile, and restrict qualifiers.
 #ifndef __STDC_NO_ATOMICS__
- #define pl_drop_const_volatile_restrict(/*type*/...) pl_choose_type(pl_is_atomic(__VA_ARGS__),pl_choose_type(pl_is_function_or_array(__VA_ARGS__),0,typeof_unqual(__VA_ARGS__))_Atomic,typeof_unqual(__VA_ARGS__))
+ #define pl_drop_const_volatile_restrict(/*type*/...) pl_choose_type(pl_is_atomic(__VA_ARGS__),pl_choose_type(pl_is_decayed(__VA_ARGS__),typeof_unqual(__VA_ARGS__),0)_Atomic,typeof_unqual(__VA_ARGS__))
 #else
  #define pl_drop_const_volatile_restrict(/*type*/...) typeof_unqual(__VA_ARGS__)
 #endif
