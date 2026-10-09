@@ -190,6 +190,7 @@ static_assert(pl_is_float(__float128));
 #ifdef __STDC_IEC_60559_DFP__
 static_assert(!pl_is_float(_Decimal32));
 #endif
+static_assert(!pl_is_float(union { int _; }));
 
 #ifdef __STDC_IEC_60559_DFP__
 static_assert(!pl_is_decimal(int));

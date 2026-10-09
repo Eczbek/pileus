@@ -81,11 +81,11 @@
 #define pl_drop_extent(/*type*/...) pl_choose_type(pl_is_array(__VA_ARGS__),*pl_fake(pl_choose_type(pl_is_array(__VA_ARGS__),typeof(__VA_ARGS__),"")),__VA_ARGS__)
 
 // Evaluates to the argument's type, without qualifiers, decayed to a pointer if it is an array or function type.
-#define pl_decay(/*type*/...) pl_choose_type(pl_is_decayed(__VA_ARGS__),typeof_unqual(__VA_ARGS__),0,pl_choose(pl_is_decayed(__VA_ARGS__),0,pl_fake(__VA_ARGS__)))
+#define pl_decay(/*type*/...) pl_choose_type(pl_is_decayed(__VA_ARGS__),typeof_unqual(__VA_ARGS__),(void)0,pl_choose(pl_is_decayed(__VA_ARGS__),0,pl_fake(__VA_ARGS__)))
 
 // Evaluates to whether the argument's type is decayed.
 #if defined(__GNUC__) && !defined(__clang__)
- #define pl_is_decayed(/*type*/...) (1^1&34816l>>(1+__builtin_classify_type(typeof(__VA_ARGS__))))
+ #define pl_is_decayed(/*type*/...) (!(1&34816l>>(1+__builtin_classify_type(typeof(__VA_ARGS__)))))
 #else
  #define pl_is_decayed(/*type*/...) _Generic(int(typeof_unqual(_Generic(pl_fake_unqual(__VA_ARGS__),void:0,default:pl_fake(__VA_ARGS__)))),int(typeof_unqual(_Generic(pl_fake_unqual(__VA_ARGS__),typeof_unqual(__VA_ARGS__)*:0,void:0,default:pl_fake(__VA_ARGS__)))const):1,default:0)
 #endif
@@ -131,7 +131,7 @@
 // Evaluates to whether the argument's type is a floating-point type.
 #ifdef __GNUC__
  // Supports extended floating-point types.
- #define pl_is_float(/*type*/...) (8==__builtin_classify_type(pl_fake(__VA_ARGS__))!=pl_is_decimal_float(__VA_ARGS__))
+ #define pl_is_float(/*type*/...) ((8==__builtin_classify_type(pl_fake(__VA_ARGS__)))^pl_is_decimal_float(__VA_ARGS__))
 #else
  #define pl_is_float(/*type*/...) _Generic(typeof_unqual(__VA_ARGS__),float:1,double:1,long double:1,default:0)
 #endif
