@@ -7,7 +7,7 @@
 
 #define PL_PARENS ()
 
-#define PL_CALL(F, ...) F(__VA_ARGS__)
+#define PL_APPLY(F, ...) F(__VA_ARGS__)
 
 #define PL_IF(B) PL_IIF(B)
 #define PL_IIF(B) DETAIL_PL_IIF##B
@@ -21,8 +21,8 @@
 #define DETAIL_PL_EVAL3(...) DETAIL_PL_EVAL4(DETAIL_PL_EVAL4(DETAIL_PL_EVAL4(DETAIL_PL_EVAL4(__VA_ARGS__))))
 #define DETAIL_PL_EVAL4(...) __VA_ARGS__
 
-#define PL_EACH(F, ...) __VA_OPT__(PL_EVAL(DETAIL_PL_EACH_(F, __VA_ARGS__)))
-#define DETAIL_PL_EACH_(F, X, ...) F(X) __VA_OPT__(DETAIL_PL_EACH_NEXT PL_PARENS (F, __VA_ARGS__))
+#define PL_EACH(F, ...) __VA_OPT__(PL_EVAL)(DETAIL_PL_EACH_(, F, __VA_ARGS__##__VA_OPT__()))
+#define DETAIL_PL_EACH_(_, F, X, ...) F(X##_) __VA_OPT__(DETAIL_PL_EACH_NEXT PL_PARENS (, F, __VA_ARGS__##_))
 #define DETAIL_PL_EACH_NEXT() DETAIL_PL_EACH_
 
 #define PL_BITCAT64(...) DETAIL_PL_BITCAT64(__VA_ARGS__)
