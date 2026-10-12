@@ -1,13 +1,12 @@
 #ifndef PL_STATIC_ASSERT_H
 #define PL_STATIC_ASSERT_H
 
-#ifndef __clang__
- #ifdef __GNUC__
-  #pragma GCC diagnostic ignored "-Wunused-value" // https://gcc.gnu.org/bugzilla/show_bug.cgi?id=127192
- #endif
- #define pl_static_assert(...) static_assert(__VA_ARGS__)
-#else
+#ifdef __clang__
  #define pl_static_assert(...) ((void)(struct{static_assert(__VA_ARGS__);int defined;}){})
+#elifdef __GNUC__
+ #define pl_static_assert(...) ((typeof(static_assert(__VA_ARGS__)))0)
+#else
+ #define pl_static_assert(...) static_assert(__VA_ARGS__)
 #endif
 
 #endif
