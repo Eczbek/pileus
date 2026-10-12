@@ -1,5 +1,5 @@
 #include <pl/print.h>
 
 int main() {
-	pl_print("Hello, {{{}}}!\n", 42); // Hello, {42}!
+	pl_print("{}, {{{}}}!\n", "Hello", 42); // Hello, {42}!
 }
