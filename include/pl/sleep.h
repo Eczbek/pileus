@@ -4,19 +4,24 @@
 #ifndef __STDC_NO_THREADS__
  #include <threads.h>
  #include <time.h>
+
 static inline void pl_sleep(unsigned long long ms) {
 	thrd_sleep(&(struct timespec){ (time_t)(ms / 1000), (typeof(((struct timespec*)0)->tv_nsec))(ms % 1000 * 1'000'000) }, nullptr);
 }
+
 #elifdef __unix__
  #define _POSIX_C_SOURCE 199309
  #include <time.h>
  #include <unistd.h>
+
 static inline void pl_sleep(unsigned long long ms) {
 	nanosleep(&(struct timespec){ (time_t)(ms / 1000), (typeof(((struct timespec*)0)->tv_nsec))(ms % 1000 * 1'000'000) }, nullptr);
 }
+
 #elifdef _WIN32
  #include <limits.h>
  #include <windows.h>
+
 static inline void pl_sleep(unsigned long long ms) {
 	while (ms > ULONG_MAX) {
 		Sleep(ULONG_MAX);
@@ -24,9 +29,11 @@ static inline void pl_sleep(unsigned long long ms) {
 	}
 	Sleep((unsigned long)ms);
 }
+
 #else
  #warning platform does not provide sleep function
  #include <time.h>
+
 static inline void pl_sleep(unsigned long long ms) {
 	struct timespec start;
 	timespec_get(&start, TIME_UTC);
