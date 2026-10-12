@@ -35,6 +35,7 @@ static_assert(pl_choose(false, 1, 2) == 2);
 
 static_assert(pl_is_same(pl_choose_type(true, int, char), int));
 static_assert(pl_is_same(pl_choose_type(false, int, char), char));
+static_assert(pl_is_same(pl_choose_type(0, 0, struct incomplete), struct incomplete));
 
 static_assert(pl_is_same(typeof(pl_fake(int) + 1), int));
 static_assert(pl_is_same(typeof(pl_fake(*pl_fake(int const*))), int const));
@@ -82,6 +83,7 @@ static_assert(pl_extent(int[2]) == 2);
 static_assert(pl_extent(int[3]) == 3);
 static_assert(pl_extent(int[]) == 0);
 static_assert(pl_extent(int) == 0);
+static_assert(pl_extent(struct incomplete) == 0);
 
 static_assert(pl_is_same(pl_drop_pointer(int), int));
 static_assert(pl_is_same(pl_drop_pointer(int*), int));
@@ -91,6 +93,7 @@ static_assert(pl_is_same(pl_drop_pointer(int* const*), int* const));
 static_assert(pl_is_same(pl_drop_pointer(int(*)[]), int[]));
 static_assert(pl_is_same(pl_drop_pointer(int(*)()), int()));
 static_assert(pl_is_same(pl_drop_pointer(int[]), int[]));
+static_assert(pl_is_same(pl_drop_pointer(struct incomplete), struct incomplete));
 
 static_assert(pl_is_same(pl_drop_extent(int), int));
 static_assert(pl_is_same(pl_drop_extent(int*), int*));
@@ -98,6 +101,7 @@ static_assert(pl_is_same(pl_drop_extent(int[]), int));
 static_assert(pl_is_same(pl_drop_extent(int[1]), int));
 static_assert(pl_is_same(pl_drop_extent("Hello"), char));
 static_assert(pl_is_same(pl_drop_extent(int const volatile[]), int const volatile));
+static_assert(pl_is_same(pl_drop_extent(struct incomplete), struct incomplete));
 
 static_assert(pl_is_decayed(int));
 static_assert(pl_is_decayed(int*));
@@ -126,6 +130,7 @@ static_assert(!pl_is_int(int()));
 __extension__ static_assert(pl_is_int(__int128));
 #endif
 static_assert(!pl_is_int(struct{ int _; }));
+static_assert(!pl_is_int(struct incomplete));
 
 static_assert(pl_is_unsigned_int(unsigned char));
 static_assert(pl_is_unsigned_int(unsigned short));
@@ -168,6 +173,26 @@ static_assert(pl_is_same(pl_make_signed_int(float), float));
 static_assert(pl_is_same(pl_make_signed_int(unsigned _BitInt(42)), _BitInt(42)));
 #endif
 
+static_assert(pl_int_max(char) == CHAR_MAX);
+static_assert(pl_int_max(unsigned int) == -1u);
+static_assert(pl_int_max(bool) == 1);
+static_assert(pl_int_max(float) == 0);
+#if defined(__GNUC__) && !defined(__clang__)
+static_assert(pl_int_max(_BitInt(42)) == 0x1FFFFFFFFFF);
+#endif
+static_assert(pl_int_max(struct{ int _; }) == 0);
+static_assert(pl_int_max(struct incomplete) == 0);
+
+static_assert(pl_int_min(char) == CHAR_MIN);
+static_assert(pl_int_min(unsigned int) == 0);
+static_assert(pl_int_min(bool) == 0);
+static_assert(pl_int_min(float) == 0);
+#if defined(__GNUC__) && !defined(__clang__)
+static_assert(pl_int_min(_BitInt(42)) == -0x20000000000);
+#endif
+static_assert(pl_int_min(struct{ int _; }) == 0);
+static_assert(pl_int_min(struct incomplete) == 0);
+
 static_assert(pl_int_width(char) == pl_int_width(unsigned char));
 static_assert(pl_int_width(short) == pl_int_width(unsigned short));
 static_assert(pl_int_width(int) == pl_int_width(unsigned int));
@@ -179,6 +204,7 @@ static_assert(pl_int_width(float) == 0);
 static_assert(pl_int_width(_BitInt(42)) == 42);
 #endif
 static_assert(pl_int_width(struct{ int _; }) == 0);
+static_assert(pl_int_width(struct incomplete) == 0);
 
 static_assert(!pl_is_float(int));
 static_assert(pl_is_float(float));
@@ -191,6 +217,7 @@ static_assert(pl_is_float(__float128));
 static_assert(!pl_is_float(_Decimal32));
 #endif
 static_assert(!pl_is_float(union { int _; }));
+static_assert(!pl_is_float(struct incomplete));
 
 #ifdef __STDC_IEC_60559_DFP__
 static_assert(!pl_is_decimal(int));

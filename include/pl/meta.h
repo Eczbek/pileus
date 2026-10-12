@@ -96,18 +96,22 @@
 // Evaluates to whether the argument's type is an integer type.
 #ifdef __GNUC__
  // Detects _BitInt and extended integer types.
- #define pl_is_int(/*type*/...) (1&524324l>>(1+__builtin_classify_type(pl_fake(__VA_ARGS__))))
+ #ifndef __clang__
+  #define pl_is_int(/*type*/...) (1&524324l>>(1+__builtin_classify_type(typeof(__VA_ARGS__))))
+ #else
+  #define pl_is_int(/*type*/...) (1&524324l>>(1+__builtin_classify_type(pl_fake(__VA_ARGS__))))
+ #endif
 #else
  #define pl_is_int(/*type*/...) (!!pl_int_width(__VA_ARGS__))
 #endif
 
 // Evaluates to whether the argument's type is an unsigned integer type.
 // Optionally upports _BitInt and extended integer types.
-#define pl_is_unsigned_int(/*type*/...) ((pl_choose_type(pl_is_int(__VA_ARGS__),typeof(__VA_ARGS__),0))-1>0)
+#define pl_is_unsigned_int(/*type*/...) ((typeof(pl_choose(pl_is_int(__VA_ARGS__),pl_fake(__VA_ARGS__),0)))-1>0)
 
 // Evaluates to whether the argument's type is a signed integer type.
 // Optionally upports _BitInt and extended integer types.
-#define pl_is_signed_int(/*type*/...) ((pl_choose_type(pl_is_int(__VA_ARGS__),typeof(__VA_ARGS__),0u))-1<0)
+#define pl_is_signed_int(/*type*/...) ((typeof(pl_choose(pl_is_int(__VA_ARGS__),pl_fake(__VA_ARGS__),0u)))-1<0)
 
 // Evaluates to the unsigned counterpart of a signed integer type, if it exists.
 // Otherwise, evaluates to the argument's type without qualifiers.
@@ -118,6 +122,22 @@
 // Otherwise, evaluates to the argument's type without qualifiers.
 // Optionally supports _BitInt.
 #define pl_make_signed_int(/*int_type*/...) typeof(_Generic(typeof_unqual(__VA_ARGS__),unsigned char:(signed char)0,unsigned short:(short)0,typeof(0u):0,typeof(0ul):0l,typeof(0ull):0ll,char:(signed char)0,default:_Generic(typeof_unqual(__VA_ARGS__),PL_IF(pl_feature_int8)(uint8_t:(int8_t)0,)()PL_IF(pl_feature_int16)(uint16_t:(int16_t)0,)()PL_IF(pl_feature_int32)(uint32_t:(int32_t)0,)()PL_IF(pl_feature_int64)(uint64_t:(int64_t)0,)()PL_IF(pl_feature_int128)(pl_uint128_t:(pl_int128_t)0,)()default:_Generic(typeof_unqual(__VA_ARGS__),uintmax_t:(intmax_t)0,default:_Generic(typeof_unqual(__VA_ARGS__),PL_IF(pl_feature_intptr)(uintptr_t:(intptr_t)0,)()default:_Generic(typeof_unqual(__VA_ARGS__),uint_least8_t:(int_least8_t)0,default:_Generic(typeof_unqual(__VA_ARGS__),uint_least16_t:(int_least16_t)0,default:_Generic(typeof_unqual(__VA_ARGS__),uint_least32_t:(int_least32_t)0,default:_Generic(typeof_unqual(__VA_ARGS__),uint_least64_t:(int_least64_t)0,default:_Generic(typeof_unqual(__VA_ARGS__),uint_fast8_t:(int_fast8_t)0,default:_Generic(typeof_unqual(__VA_ARGS__),uint_fast16_t:(int_fast16_t)0,default:_Generic(typeof_unqual(__VA_ARGS__),uint_fast32_t:(int_fast32_t)0,default:_Generic(typeof_unqual(__VA_ARGS__),uint_fast64_t:(int_fast64_t)0,default:_Generic(typeof_unqual(__VA_ARGS__),PL_IF(pl_feature_gcc)(PL_IF(pl_feature_clang)()(unsigned _BitInt(pl_int_width(__VA_ARGS__)+!pl_is_int(__VA_ARGS__)):(_BitInt(pl_int_width(__VA_ARGS__)+!pl_is_int(__VA_ARGS__)))0,))()default:pl_fake_unqual(__VA_ARGS__)))))))))))))))
+
+// Evaluates to the maximum value of an integer type.
+#if defined(__GNUC__) && !defined(__clang__)
+ // Supports _BitInt and extended integer types.
+ #define pl_int_max(/*int_type*/...) (pl_is_int(__VA_ARGS__)*__extension__ _Maxof(pl_choose_type(pl_is_int(__VA_ARGS__),typeof(__VA_ARGS__),0)))
+#else
+ #define pl_int_max(/*int_type*/...) _Generic(typeof_unqual(__VA_ARGS__),unsigned char:UCHAR_MAX,unsigned short:USHRT_MAX,typeof(0u):-1u,typeof(0ul):-1ul,typeof(0ull):-1ull,signed char:SCHAR_MAX,short:SHRT_MAX,int:INT_MAX,long:LONG_MAX,long long:LLONG_MAX,char:CHAR_MAX,bool:1,default:_Generic(typeof_unqual(__VA_ARGS__),PL_IF(pl_feature_int8)(uint8_t:255,int8_t:127,)()PL_IF(pl_feature_int16)(uint16_t:65535,int16_t:32767,)()PL_IF(pl_feature_int32)(uint32_t:UINT32_MAX,int32_t:INT32_MAX,)()PL_IF(pl_feature_int64)(uint64_t:UINT64_MAX,int64_t:INT64_MAX,)()PL_IF(pl_feature_int128)(pl_uint128_t:(pl_uint128_t)-1,pl_int128_t:(pl_int128_t)((pl_uint128_t)-1/2),)()default:_Generic(typeof_unqual(__VA_ARGS__),size_t:SIZE_MAX,ptrdiff_t:PTRDIFF_MAX,default:_Generic(typeof_unqual(__VA_ARGS__),uintmax_t:INTMAX_MAX,intmax_t:INTMAX_MAX,default:_Generic(typeof_unqual(__VA_ARGS__),PL_IF(pl_feature_intptr)(uintptr_t:INTPTR_MAX,intptr_t:INTPTR_MAX,)()default:_Generic(typeof_unqual(__VA_ARGS__),uint_least8_t:INT_LEAST8_MAX,int_least8_t:INT_LEAST8_MAX,default:_Generic(typeof_unqual(__VA_ARGS__),uint_least16_t:INT_LEAST16_MAX,int_least16_t:INT_LEAST16_MAX,default:_Generic(typeof_unqual(__VA_ARGS__),uint_least32_t:INT_LEAST32_MAX,int_least32_t:INT_LEAST32_MAX,default:_Generic(typeof_unqual(__VA_ARGS__),uint_least64_t:INT_LEAST64_MAX,int_least64_t:INT_LEAST64_MAX,default:_Generic(typeof_unqual(__VA_ARGS__),uint_fast8_t:INT_FAST8_MAX,int_fast8_t:INT_FAST8_MAX,default:_Generic(typeof_unqual(__VA_ARGS__),uint_fast16_t:INT_FAST16_MAX,int_fast16_t:INT_FAST16_MAX,default:_Generic(typeof_unqual(__VA_ARGS__),uint_fast32_t:INT_FAST32_MAX,int_fast32_t:INT_FAST32_MAX,default:_Generic(typeof_unqual(__VA_ARGS__),uint_fast64_t:INT_FAST64_MAX,int_fast64_t:INT_FAST64_MAX,default:_Generic(typeof_unqual(__VA_ARGS__),wchar_t:WCHAR_MAX,default:_Generic(typeof_unqual(__VA_ARGS__),wint_t:WINT_MAX,default:_Generic(typeof_unqual(__VA_ARGS__),sig_atomic_t:SIG_ATOMIC_MAX,default:0))))))))))))))))
+#endif
+
+// Evaluates to the minimum value of an integer type.
+#if defined(__GNUC__) && !defined(__clang__)
+ // Supports _BitInt and extended integer types.
+ #define pl_int_min(/*int_type*/...) (__extension__ _Minof(pl_choose_type(pl_is_int(__VA_ARGS__),typeof(__VA_ARGS__),0u)))
+#else
+ #define pl_int_min(/*int_type*/...) _Generic(typeof_unqual(__VA_ARGS__),signed char:SCHAR_MIN,short:SHRT_MIN,int:INT_MIN,long:LONG_MIN,long long:LLONG_MIN,char:CHAR_MIN,default:_Generic(typeof_unqual(__VA_ARGS__),PL_IF(pl_feature_int8)(int8_t:-128,)()PL_IF(pl_feature_int16)(int16_t:-32768,)()PL_IF(pl_feature_int32)(int32_t:INT32_MIN,)()PL_IF(pl_feature_int64)(int64_t:INT64_MIN,)()PL_IF(pl_feature_int128)(pl_int128_t:(pl_int128_t)((pl_uint128_t)-1/-2),)()default:_Generic(typeof_unqual(__VA_ARGS__),ptrdiff_t:PTRDIFF_MIN,default:_Generic(typeof_unqual(__VA_ARGS__),intmax_t:INTMAX_MIN,default:_Generic(typeof_unqual(__VA_ARGS__),PL_IF(pl_feature_intptr)(intptr_t:INTPTR_MIN,)()default:_Generic(typeof_unqual(__VA_ARGS__),int_least8_t:INT_LEAST8_MIN,default:_Generic(typeof_unqual(__VA_ARGS__),int_least16_t:INT_LEAST16_MIN,default:_Generic(typeof_unqual(__VA_ARGS__),int_least32_t:INT_LEAST32_MIN,default:_Generic(typeof_unqual(__VA_ARGS__),int_least64_t:INT_LEAST64_MIN,default:_Generic(typeof_unqual(__VA_ARGS__),int_fast8_t:INT_FAST8_MIN,default:_Generic(typeof_unqual(__VA_ARGS__),int_fast16_t:INT_FAST16_MIN,default:_Generic(typeof_unqual(__VA_ARGS__),int_fast32_t:INT_FAST32_MIN,default:_Generic(typeof_unqual(__VA_ARGS__),int_fast64_t:INT_FAST64_MIN,default:_Generic(typeof_unqual(__VA_ARGS__),wchar_t:WCHAR_MIN,default:_Generic(typeof_unqual(__VA_ARGS__),wint_t:WINT_MIN,default:_Generic(typeof_unqual(__VA_ARGS__),sig_atomic_t:SIG_ATOMIC_MIN,default:0))))))))))))))))
+#endif
 
 // Evaluates to the width of an integer type.
 // If the argument's type is not an integer type, evaluates to zero.
@@ -131,7 +151,11 @@
 // Evaluates to whether the argument's type is a floating-point type.
 #ifdef __GNUC__
  // Supports extended floating-point types.
- #define pl_is_float(/*type*/...) ((8==__builtin_classify_type(pl_fake(__VA_ARGS__)))^pl_is_decimal_float(__VA_ARGS__))
+ #ifndef __clang__
+  #define pl_is_float(/*type*/...) ((8==__builtin_classify_type(typeof(__VA_ARGS__)))^pl_is_decimal_float(__VA_ARGS__))
+ #else
+  #define pl_is_float(/*type*/...) ((8==__builtin_classify_type(pl_fake(__VA_ARGS__)))^pl_is_decimal_float(__VA_ARGS__))
+ #endif
 #else
  #define pl_is_float(/*type*/...) _Generic(typeof_unqual(__VA_ARGS__),float:1,double:1,long double:1,default:0)
 #endif
