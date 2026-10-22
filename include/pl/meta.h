@@ -495,7 +495,7 @@
 // Evaluates to the argument's type without const, volatile, _Atomic, and restrict qualifiers.
 #define pl_drop_const_volatile_atomic_restrict(/*type*/...) typeof_unqual(__VA_ARGS__)
 
-// Evaluates to whether an identifier represents a type.
+// Evaluates to whether an identifier names a type.
 #define pl_is_type(name) _Generic(int(int(name)),int(int):0,default:1)
 
 #endif
